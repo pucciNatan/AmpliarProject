@@ -12,12 +12,12 @@ public class PsychologistModel extends PersonAbstract {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String crp;
+    private String email;
+    private String password;
 
-    //TODO: Senha, como vai funcionar? Google Authenticator? Senha digitada? Como recuperar a senha?
-
-    public PsychologistModel(String fullName, String cpf, String phoneNumber, String crp){
+    public PsychologistModel(String fullName, String cpf, String phoneNumber, String email, String password){
         super(fullName, cpf, phoneNumber);
-        this.crp = crp;
+        this.email = email;
+        this.password = password;
     }
 }

@@ -19,5 +19,8 @@ public class PaymentModel {
     Long id;
     BigDecimal valor;
     LocalDate paymentDate;
-    //TODO -> Quem é o pagador? O paciente? O responsável por ele? Uma outra pessoa? Quem?
+
+    @ManyToOne
+    @JoinColumn(name = "payer_id")
+    PayerModel payer;
 }
