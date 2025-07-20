@@ -1,6 +1,7 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.models.PatientModel;
+import com.example.ampliar.DTO.PatientDTO;
+import com.example.ampliar.model.PatientModel;
 import com.example.ampliar.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public class PatientController {
     private PatientService patientService;
 
     @PostMapping
-    public PatientModel createPatient(@RequestBody PatientModel patient) {
+    public PatientModel createPatient(@RequestBody PatientDTO patient) {
         return patientService.createPatient(patient);
     }
 

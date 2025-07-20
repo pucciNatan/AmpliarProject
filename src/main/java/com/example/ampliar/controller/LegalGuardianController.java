@@ -1,6 +1,6 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.models.LegalGuardianModel;
+import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.service.LegalGuardianService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

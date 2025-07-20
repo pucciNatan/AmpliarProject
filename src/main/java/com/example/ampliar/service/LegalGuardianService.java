@@ -1,6 +1,6 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.models.LegalGuardianModel;
+import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.repository.LegalGuardianRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;

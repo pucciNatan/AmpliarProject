@@ -1,4 +1,4 @@
-package com.example.ampliar.models;
+package com.example.ampliar.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.Valid;

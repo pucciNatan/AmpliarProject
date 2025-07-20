@@ -1,5 +1,6 @@
-package com.example.ampliar.models;
+package com.example.ampliar.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,7 @@ public class PatientModel extends PersonAbstract {
             joinColumns = @JoinColumn(name = "patient_id"),
             inverseJoinColumns = @JoinColumn(name = "guardian_id")
     )
+    @JsonManagedReference
     private List<LegalGuardianModel> legalGuardians = new ArrayList<>();
 
     public PatientModel(LocalDate birthDate, List<LegalGuardianModel> legalGuardians,

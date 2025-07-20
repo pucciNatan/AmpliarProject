@@ -1,6 +1,6 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.models.PaymentModel;
+import com.example.ampliar.model.PaymentModel;
 import com.example.ampliar.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

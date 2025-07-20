@@ -1,4 +1,4 @@
-package com.example.ampliar.models;
+package com.example.ampliar.model;
 
 import org.hibernate.validator.constraints.br.CPF;
 

@@ -1,7 +1,11 @@
 package com.example.ampliar.repository;
 
-import com.example.ampliar.models.PsychologistModel;
+import com.example.ampliar.model.PsychologistModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PsychologistRepository extends JpaRepository<PsychologistModel, Long> {}
+import java.util.Optional;
+
+public interface PsychologistRepository extends JpaRepository<PsychologistModel, Long> {
+    Optional<PsychologistModel> findByEmail(String email);
+}
 

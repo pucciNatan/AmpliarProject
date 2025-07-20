@@ -1,6 +1,6 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.models.AppointmentModel;
+import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.repository.AppointmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;

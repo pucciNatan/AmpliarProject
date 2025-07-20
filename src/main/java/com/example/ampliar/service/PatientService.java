@@ -1,6 +1,9 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.models.PatientModel;
+import com.example.ampliar.DTO.PatientDTO;
+import com.example.ampliar.model.LegalGuardianModel;
+import com.example.ampliar.model.PatientModel;
+import com.example.ampliar.repository.LegalGuardianRepository;
 import com.example.ampliar.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +14,25 @@ import java.util.List;
 @Service
 public class PatientService {
 
-    @Autowired
-    private PatientRepository patientRepository;
+    private final PatientRepository patientRepository;
+    private final LegalGuardianRepository legalGuardianRepository;
 
-    public PatientModel createPatient(PatientModel patient) {
+    public PatientService(PatientRepository patientRepository, LegalGuardianRepository legalGuardianRepository) {
+        this.patientRepository = patientRepository;
+        this.legalGuardianRepository = legalGuardianRepository;
+    }
+
+    public PatientModel createPatient(PatientDTO dto) {
+        var guardians = legalGuardianRepository.findAllById(dto.getLegalGuardianIds());
+
+        PatientModel patient = new PatientModel(
+                dto.getBirthDate(),
+                guardians,
+                dto.getFullName(),
+                dto.getCpf(),
+                dto.getPhoneNumber()
+        );
+
         return patientRepository.save(patient);
     }
 
@@ -46,4 +64,6 @@ public class PatientService {
     public List<PatientModel> getAllPatients() {
         return patientRepository.findAll();
     }
+
+
 }

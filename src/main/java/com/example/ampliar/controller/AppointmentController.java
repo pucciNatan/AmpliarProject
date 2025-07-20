@@ -1,6 +1,6 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.models.AppointmentModel;
+import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
