@@ -1,7 +1,6 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.DTO.PatientDTO;
-import com.example.ampliar.model.PatientModel;
+import com.example.ampliar.dto.PatientDTO;
 import com.example.ampliar.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,12 +15,12 @@ public class PatientController {
     private PatientService patientService;
 
     @PostMapping
-    public PatientModel createPatient(@RequestBody PatientDTO patient) {
+    public PatientDTO createPatient(@RequestBody PatientDTO patient) {
         return patientService.createPatient(patient);
     }
 
     @PutMapping("/{id}")
-    public PatientModel updatePatient(@PathVariable Long id, @RequestBody PatientModel updatedPatient) {
+    public PatientDTO updatePatient(@PathVariable Long id, @RequestBody PatientDTO updatedPatient) {
         return patientService.updatePatient(id, updatedPatient);
     }
 
@@ -31,12 +30,12 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    public PatientModel getPatientById(@PathVariable Long id) {
+    public PatientDTO getPatientById(@PathVariable Long id) {
         return patientService.getPatientById(id);
     }
 
     @GetMapping
-    public List<PatientModel> getAllPatients() {
+    public List<PatientDTO> getAllPatients() {
         return patientService.getAllPatients();
     }
 }

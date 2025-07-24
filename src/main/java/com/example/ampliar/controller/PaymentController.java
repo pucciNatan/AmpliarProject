@@ -1,5 +1,6 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.PaymentDTO;
 import com.example.ampliar.model.PaymentModel;
 import com.example.ampliar.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +16,12 @@ public class PaymentController {
     private PaymentService paymentService;
 
     @PostMapping
-    public PaymentModel createPayment(@RequestBody PaymentModel payment) {
+    public PaymentDTO createPayment(@RequestBody PaymentDTO payment) {
         return paymentService.createPayment(payment);
     }
 
     @PutMapping("/{id}")
-    public PaymentModel updatePayment(@PathVariable Long id, @RequestBody PaymentModel updatedPayment) {
+    public PaymentDTO updatePayment(@PathVariable Long id, @RequestBody PaymentDTO updatedPayment) {
         return paymentService.updatePayment(id, updatedPayment);
     }
 
@@ -30,12 +31,12 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
-    public PaymentModel getPaymentById(@PathVariable Long id) {
+    public PaymentDTO getPaymentById(@PathVariable Long id) {
         return paymentService.getPaymentById(id);
     }
 
     @GetMapping
-    public List<PaymentModel> getAllPayments(){
+    public List<PaymentDTO> getAllPayments(){
         return paymentService.getAllPayments();
     }
 }

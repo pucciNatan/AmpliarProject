@@ -1,48 +1,98 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.AppointmentDTO;
+import com.example.ampliar.mapper.AppointmentDTOMapper;
 import com.example.ampliar.model.AppointmentModel;
+import com.example.ampliar.model.PatientModel;
+import com.example.ampliar.model.PaymentModel;
+import com.example.ampliar.model.PsychologistModel;
 import com.example.ampliar.repository.AppointmentRepository;
+import com.example.ampliar.repository.PatientRepository;
+import com.example.ampliar.repository.PaymentRepository;
+import com.example.ampliar.repository.PsychologistRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AppointmentService {
 
-    @Autowired
-    private AppointmentRepository appointmentRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final AppointmentDTOMapper appointmentDTOMapper;
+    private final PatientRepository patientRepository;
+    private final PsychologistRepository psychologistRepository;
+    private final PaymentRepository paymentRepository;
 
-    public AppointmentModel createAppointment(AppointmentModel appointment) {
-        return appointmentRepository.save(appointment);
+    public AppointmentService(
+            AppointmentRepository appointmentRepository,
+            AppointmentDTOMapper appointmentDTOMapper,
+            PatientRepository patientRepository,
+            PsychologistRepository psychologistRepository,
+            PaymentRepository paymentRepository
+    ) {
+        this.appointmentRepository = appointmentRepository;
+        this.appointmentDTOMapper = appointmentDTOMapper;
+        this.patientRepository = patientRepository;
+        this.psychologistRepository = psychologistRepository;
+        this.paymentRepository = paymentRepository;
     }
 
-    public AppointmentModel updateAppointment(Long id, AppointmentModel updatedAppointment) {
-        AppointmentModel existingAppointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Appointment not found"));
+    public AppointmentDTO createAppointment(AppointmentDTO dto) {
+        AppointmentModel model = new AppointmentModel();
+        model.setAppointmentDate(dto.appointmentDate());
+        model.setPatient(getPatient(dto.patientId()));
+        model.setPsychologist(getPsychologist(dto.psychologistId()));
+        model.setPayment(getPayment(dto.paymentId()));
 
-        existingAppointment.setAppointmentDate(updatedAppointment.getAppointmentDate());
-        existingAppointment.setPatient(updatedAppointment.getPatient());
-        existingAppointment.setPsychologist(updatedAppointment.getPsychologist());
-        existingAppointment.setPayment(updatedAppointment.getPayment());
+        return appointmentDTOMapper.apply(appointmentRepository.save(model));
+    }
 
-        return appointmentRepository.save(existingAppointment);
+    public AppointmentDTO updateAppointment(Long id, AppointmentDTO dto) {
+        AppointmentModel existing = appointmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Agendamento não encontrado"));
+
+        existing.setAppointmentDate(dto.appointmentDate());
+        existing.setPatient(getPatient(dto.patientId()));
+        existing.setPsychologist(getPsychologist(dto.psychologistId()));
+        existing.setPayment(getPayment(dto.paymentId()));
+
+        return appointmentDTOMapper.apply(appointmentRepository.save(existing));
+    }
+
+    public AppointmentDTO getAppointmentById(Long id) {
+        return appointmentRepository.findById(id)
+                .map(appointmentDTOMapper)
+                .orElseThrow(() -> new EntityNotFoundException("Agendamento não encontrado"));
+    }
+
+    public List<AppointmentDTO> getAllAppointments() {
+        return appointmentRepository.findAll()
+                .stream()
+                .map(appointmentDTOMapper)
+                .collect(Collectors.toList());
     }
 
     public void deleteAppointment(Long id) {
         if (!appointmentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Appointment not found");
+            throw new EntityNotFoundException("Agendamento não encontrado");
         }
         appointmentRepository.deleteById(id);
     }
 
-    public AppointmentModel getAppointmentById(Long id) {
-        return appointmentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Appointment not found"));
+    private PatientModel getPatient(Long id) {
+        return patientRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Paciente não encontrado"));
     }
 
-    public List<AppointmentModel> getAllAppointments() {
-        return appointmentRepository.findAll();
+    private PsychologistModel getPsychologist(Long id) {
+        return psychologistRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado"));
+    }
+
+    private PaymentModel getPayment(Long id) {
+        return paymentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado"));
     }
 }

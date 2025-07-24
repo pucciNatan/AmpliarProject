@@ -1,69 +1,84 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.PsychologistCreateDTO;
+import com.example.ampliar.dto.PsychologistDTO;
+import com.example.ampliar.mapper.PsychologistDTOMapper;
 import com.example.ampliar.model.PsychologistModel;
 import com.example.ampliar.repository.PsychologistRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PsychologistService {
 
-    @Autowired
     private final PsychologistRepository psychologistRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PsychologistDTOMapper psychologistDTOMapper;
 
-    public PsychologistService(PsychologistRepository psychologistRepository){
+    public PsychologistService(
+            PsychologistRepository psychologistRepository,
+            PasswordEncoder passwordEncoder,
+            PsychologistDTOMapper psychologistDTOMapper
+    ) {
         this.psychologistRepository = psychologistRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
+        this.psychologistDTOMapper = psychologistDTOMapper;
     }
 
-    public PsychologistModel createPsychologist(PsychologistModel psychologist) {
-        String fullName = psychologist.getFullName();
-        String password = psychologist.getPassword();
-        String cpf = psychologist.getCpf();
-        String phoneNumber = psychologist.getPhoneNumber();
-        String email = psychologist.getEmail();
-        String criptoPassword = passwordEncoder.encode(password);
-        PsychologistModel psychologistModel = new PsychologistModel(fullName, cpf, phoneNumber, email, criptoPassword);
-        return psychologistRepository.save(psychologistModel);
+    public PsychologistDTO createPsychologist(PsychologistCreateDTO dto) {
+        PsychologistModel model = new PsychologistModel(
+                dto.fullName(),
+                dto.cpf(),
+                dto.phoneNumber(),
+                dto.email(),
+                passwordEncoder.encode(dto.password())
+        );
+
+        return psychologistDTOMapper.apply(psychologistRepository.save(model));
     }
 
-    public PsychologistModel updatePsychologist(Long id, PsychologistModel updatedPsychologist) {
+    public PsychologistDTO updatePsychologist(Long id, PsychologistCreateDTO dto) {
         PsychologistModel existing = psychologistRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Psychologist not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado"));
 
-        existing.setFullName(updatedPsychologist.getFullName());
-        existing.setCpf(updatedPsychologist.getCpf());
-        existing.setPhoneNumber(updatedPsychologist.getPhoneNumber());
-        existing.setEmail(updatedPsychologist.getEmail());
-        existing.setPassword(updatedPsychologist.getPassword());
+        existing.setFullName(dto.fullName());
+        existing.setCpf(dto.cpf());
+        existing.setPhoneNumber(dto.phoneNumber());
+        existing.setEmail(dto.email());
 
-        return psychologistRepository.save(existing);
-    }
-
-    public void deletePsychologist(Long id) {
-        if (!psychologistRepository.existsById(id)) {
-            throw new EntityNotFoundException("Psychologist not found");
+        if (dto.password() != null && !dto.password().isBlank()) {
+            existing.setPassword(passwordEncoder.encode(dto.password()));
         }
-        psychologistRepository.deleteById(id);
+
+        return psychologistDTOMapper.apply(psychologistRepository.save(existing));
     }
 
-    public PsychologistModel getPsychologistById(Long id) {
+    public PsychologistDTO getPsychologistById(Long id) {
         return psychologistRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Psychologist not found"));
+                .map(psychologistDTOMapper)
+                .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado"));
     }
 
     public Optional<PsychologistModel> findByEmail(String email) {
         return psychologistRepository.findByEmail(email);
     }
 
-    public List<PsychologistModel> getAllPsychologists() {
-        return psychologistRepository.findAll();
+    public List<PsychologistDTO> getAllPsychologists() {
+        return psychologistRepository.findAll()
+                .stream()
+                .map(psychologistDTOMapper)
+                .collect(Collectors.toList());
+    }
+
+    public void deletePsychologist(Long id) {
+        if (!psychologistRepository.existsById(id)) {
+            throw new EntityNotFoundException("Psicólogo não encontrado");
+        }
+        psychologistRepository.deleteById(id);
     }
 }

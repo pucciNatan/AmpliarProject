@@ -1,46 +1,60 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.PayerDTO;
+import com.example.ampliar.mapper.PayerDTOMapper;
 import com.example.ampliar.model.PayerModel;
 import com.example.ampliar.repository.PayerRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PayerService {
 
-    @Autowired
-    private PayerRepository payerRepository;
+    private final PayerRepository payerRepository;
+    private final PayerDTOMapper payerDTOMapper;
 
-    public PayerModel createPayer(PayerModel payer) {
-        return payerRepository.save(payer);
+    public PayerService(PayerRepository payerRepository, PayerDTOMapper payerDTOMapper) {
+        this.payerRepository = payerRepository;
+        this.payerDTOMapper = payerDTOMapper;
     }
 
-    public List<PayerModel> getAllPayers() {
-        return payerRepository.findAll();
+    public PayerDTO createPayer(PayerDTO dto) {
+        PayerModel model = new PayerModel(dto.fullName(), dto.cpf());
+        model.setPhoneNumber(dto.phoneNumber());
+        return payerDTOMapper.apply(payerRepository.save(model));
     }
 
-    public PayerModel getPayerById(Long id) {
+    public List<PayerDTO> getAllPayers() {
+        return payerRepository.findAll()
+                .stream()
+                .map(payerDTOMapper)
+                .collect(Collectors.toList());
+    }
+
+    public PayerDTO getPayerById(Long id) {
         return payerRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Payer not found"));
+                .map(payerDTOMapper)
+                .orElseThrow(() -> new EntityNotFoundException("Pagador não encontrado"));
     }
 
     public void deletePayer(Long id) {
         if (!payerRepository.existsById(id)) {
-            throw new EntityNotFoundException("Payer not found");
+            throw new EntityNotFoundException("Pagador não encontrado");
         }
         payerRepository.deleteById(id);
     }
 
-    public PayerModel updatePayer(Long id, PayerModel updatedPayer) {
+    public PayerDTO updatePayer(Long id, PayerDTO dto) {
         PayerModel existing = payerRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Payer not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Pagador não encontrado"));
 
-        existing.setFullName(updatedPayer.getFullName());
-        existing.setCpf(updatedPayer.getCpf());
+        existing.setFullName(dto.fullName());
+        existing.setCpf(dto.cpf());
+        existing.setPhoneNumber(dto.phoneNumber());
 
-        return payerRepository.save(existing);
+        return payerDTOMapper.apply(payerRepository.save(existing));
     }
 }

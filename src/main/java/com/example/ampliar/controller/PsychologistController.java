@@ -1,6 +1,7 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.model.PsychologistModel;
+import com.example.ampliar.dto.PsychologistCreateDTO;
+import com.example.ampliar.dto.PsychologistDTO;
 import com.example.ampliar.service.PsychologistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +16,8 @@ public class PsychologistController {
     private PsychologistService psychologistService;
 
     @PutMapping("/{id}")
-    public PsychologistModel updatePsychologist(@PathVariable Long id, @RequestBody PsychologistModel updatedPsychologist) {
-        return psychologistService.updatePsychologist(id, updatedPsychologist);
+    public PsychologistDTO updatePsychologist(@PathVariable Long id, @RequestBody PsychologistCreateDTO dto) {
+        return psychologistService.updatePsychologist(id, dto);
     }
 
     @DeleteMapping("/{id}")
@@ -25,12 +26,12 @@ public class PsychologistController {
     }
 
     @GetMapping("/{id}")
-    public PsychologistModel getPsychologistById(@PathVariable Long id) {
+    public PsychologistDTO getPsychologistById(@PathVariable Long id) {
         return psychologistService.getPsychologistById(id);
     }
 
     @GetMapping
-    public List<PsychologistModel> getAllPsychologists() {
+    public List<PsychologistDTO> getAllPsychologists() {
         return psychologistService.getAllPsychologists();
     }
 }
