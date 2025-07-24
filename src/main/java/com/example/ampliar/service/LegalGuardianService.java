@@ -1,48 +1,76 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.LegalGuardianDTO;
+import com.example.ampliar.mapper.LegalGuardianDTOMapper;
 import com.example.ampliar.model.LegalGuardianModel;
+import com.example.ampliar.model.PatientModel;
 import com.example.ampliar.repository.LegalGuardianRepository;
+import com.example.ampliar.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LegalGuardianService {
 
-    @Autowired
-    private LegalGuardianRepository legalGuardianRepository;
+    private final LegalGuardianRepository legalGuardianRepository;
+    private final PatientRepository patientRepository;
+    private final LegalGuardianDTOMapper legalGuardianDTOMapper;
 
-    public LegalGuardianModel createGuardian(LegalGuardianModel guardian) {
-        return legalGuardianRepository.save(guardian);
+    public LegalGuardianService(
+            LegalGuardianRepository legalGuardianRepository,
+            PatientRepository patientRepository,
+            LegalGuardianDTOMapper legalGuardianDTOMapper
+    ) {
+        this.legalGuardianRepository = legalGuardianRepository;
+        this.patientRepository = patientRepository;
+        this.legalGuardianDTOMapper = legalGuardianDTOMapper;
     }
 
-    public LegalGuardianModel updateGuardian(Long id, LegalGuardianModel updatedGuardian) {
-        LegalGuardianModel existingGuardian = legalGuardianRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Legal guardian not found"));
+    public LegalGuardianDTO createGuardian(LegalGuardianDTO dto) {
+        List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
 
-        existingGuardian.setFullName(updatedGuardian.getFullName());
-        existingGuardian.setCpf(updatedGuardian.getCpf());
-        existingGuardian.setPhoneNumber(updatedGuardian.getPhoneNumber());
-        existingGuardian.setPatients(updatedGuardian.getPatients());
+        LegalGuardianModel model = new LegalGuardianModel(
+                patients,
+                dto.fullName(),
+                dto.cpf(),
+                dto.phoneNumber()
+        );
 
-        return legalGuardianRepository.save(existingGuardian);
+        return legalGuardianDTOMapper.apply(legalGuardianRepository.save(model));
+    }
+
+    public LegalGuardianDTO updateGuardian(Long id, LegalGuardianDTO dto) {
+        LegalGuardianModel existing = legalGuardianRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Responsável legal não encontrado"));
+
+        existing.setFullName(dto.fullName());
+        existing.setCpf(dto.cpf());
+        existing.setPhoneNumber(dto.phoneNumber());
+        existing.setPatients(patientRepository.findAllById(dto.patientIds()));
+
+        return legalGuardianDTOMapper.apply(legalGuardianRepository.save(existing));
+    }
+
+    public LegalGuardianDTO getGuardianById(Long id) {
+        return legalGuardianRepository.findById(id)
+                .map(legalGuardianDTOMapper)
+                .orElseThrow(() -> new EntityNotFoundException("Responsável legal não encontrado"));
+    }
+
+    public List<LegalGuardianDTO> getAllGuardians() {
+        return legalGuardianRepository.findAll()
+                .stream()
+                .map(legalGuardianDTOMapper)
+                .collect(Collectors.toList());
     }
 
     public void deleteGuardian(Long id) {
         if (!legalGuardianRepository.existsById(id)) {
-            throw new EntityNotFoundException("Legal guardian not found");
+            throw new EntityNotFoundException("Responsável legal não encontrado");
         }
         legalGuardianRepository.deleteById(id);
-    }
-
-    public LegalGuardianModel getGuardianById(Long id) {
-        return legalGuardianRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Legal guardian not found"));
-    }
-
-    public List<LegalGuardianModel> getAllGuardians() {
-        return legalGuardianRepository.findAll();
     }
 }

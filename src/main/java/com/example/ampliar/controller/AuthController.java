@@ -1,5 +1,8 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.AuthRequestDTO;
+import com.example.ampliar.dto.PsychologistCreateDTO;
+import com.example.ampliar.mapper.PsychologistDTOMapper;
 import com.example.ampliar.model.PsychologistModel;
 import com.example.ampliar.security.JwtUtil;
 import com.example.ampliar.service.PsychologistService;
@@ -18,27 +21,23 @@ public class AuthController {
     @Autowired
     private PsychologistService psychologistService;
 
+    @Autowired
+    private PsychologistDTOMapper psychologistDTOMapper;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
-        PsychologistModel newUser = new PsychologistModel(
-                request.get("fullName"),
-                request.get("cpf"),
-                request.get("phoneNumber"),
-                request.get("email"),
-                request.get("password")
-        );
-        return ResponseEntity.ok(psychologistService.createPsychologist(newUser));
+    public ResponseEntity<?> register(@RequestBody PsychologistCreateDTO request) {
+        return ResponseEntity.ok(psychologistService.createPsychologist(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        Optional<PsychologistModel> userOpt = psychologistService.findByEmail(request.get("email"));
+    public ResponseEntity<?> login(@RequestBody AuthRequestDTO request) {
+        Optional<PsychologistModel> userOpt = psychologistService.findByEmail(request.email());
 
         if (userOpt.isPresent()) {
             PsychologistModel user = userOpt.get();
-            boolean passwordMatches = passwordEncoder.matches(request.get("password"), user.getPassword());
+            boolean passwordMatches = passwordEncoder.matches(request.password(), user.getPassword());
 
             if (passwordMatches) {
                 String token = JwtUtil.generateToken(user.getEmail());

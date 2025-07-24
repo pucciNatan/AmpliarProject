@@ -1,6 +1,6 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.model.AppointmentModel;
+import com.example.ampliar.dto.AppointmentDTO;
 import com.example.ampliar.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,13 +15,13 @@ public class AppointmentController {
     private AppointmentService appointmentService;
 
     @PostMapping
-    public AppointmentModel createAppointment(@RequestBody AppointmentModel appointment) {
-        return appointmentService.createAppointment(appointment);
+    public AppointmentDTO createAppointment(@RequestBody AppointmentDTO appointmentDTO) {
+        return appointmentService.createAppointment(appointmentDTO);
     }
 
     @PutMapping("/{id}")
-    public AppointmentModel updateAppointment(@PathVariable Long id, @RequestBody AppointmentModel updatedAppointment) {
-        return appointmentService.updateAppointment(id, updatedAppointment);
+    public AppointmentDTO updateAppointment(@PathVariable Long id, @RequestBody AppointmentDTO updatedDTO) {
+        return appointmentService.updateAppointment(id, updatedDTO);
     }
 
     @DeleteMapping("/{id}")
@@ -30,12 +30,12 @@ public class AppointmentController {
     }
 
     @GetMapping("/{id}")
-    public AppointmentModel getAppointmentById(@PathVariable Long id) {
+    public AppointmentDTO getAppointmentById(@PathVariable Long id) {
         return appointmentService.getAppointmentById(id);
     }
 
     @GetMapping
-    public List<AppointmentModel> getAllAppointments() {
+    public List<AppointmentDTO> getAllAppointments() {
         return appointmentService.getAllAppointments();
     }
 }

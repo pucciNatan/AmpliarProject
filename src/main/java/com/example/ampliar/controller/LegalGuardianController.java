@@ -1,6 +1,6 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.model.LegalGuardianModel;
+import com.example.ampliar.dto.LegalGuardianDTO;
 import com.example.ampliar.service.LegalGuardianService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,27 +15,27 @@ public class LegalGuardianController {
     private LegalGuardianService legalGuardianService;
 
     @PostMapping
-    public LegalGuardianModel createGuardian(@RequestBody LegalGuardianModel guardian) {
-        return legalGuardianService.createGuardian(guardian);
+    public LegalGuardianDTO createGuardian(@RequestBody LegalGuardianDTO guardianDTO) {
+        return legalGuardianService.createGuardian(guardianDTO);
     }
 
     @PutMapping("/{id}")
-    public LegalGuardianModel updateGuardian(@PathVariable Long id, @RequestBody LegalGuardianModel updatedGuardian) {
-        return legalGuardianService.updateGuardian(id, updatedGuardian);
+    public LegalGuardianDTO updateGuardian(@PathVariable Long id, @RequestBody LegalGuardianDTO updatedDTO) {
+        return legalGuardianService.updateGuardian(id, updatedDTO);
+    }
+
+    @GetMapping("/{id}")
+    public LegalGuardianDTO getGuardianById(@PathVariable Long id) {
+        return legalGuardianService.getGuardianById(id);
+    }
+
+    @GetMapping
+    public List<LegalGuardianDTO> getAllGuardians() {
+        return legalGuardianService.getAllGuardians();
     }
 
     @DeleteMapping("/{id}")
     public void deleteGuardian(@PathVariable Long id) {
         legalGuardianService.deleteGuardian(id);
-    }
-
-    @GetMapping("/{id}")
-    public LegalGuardianModel getGuardianById(@PathVariable Long id) {
-        return legalGuardianService.getGuardianById(id);
-    }
-
-    @GetMapping
-    public List<LegalGuardianModel> getAllGuardians() {
-        return legalGuardianService.getAllGuardians();
     }
 }
