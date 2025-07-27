@@ -12,18 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "payer")
 public class PayerModel extends PersonAbstract {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     public PayerModel(String fullName, String cpf) {
         super(fullName, cpf);
-    }
-
-    public void setId(Long id) {
-        if (id != null && id < 0) {
-            throw new IllegalArgumentException("ID não pode ser negativo");
-        }
-        this.id = id;
     }
 }

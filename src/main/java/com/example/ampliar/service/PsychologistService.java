@@ -31,15 +31,20 @@ public class PsychologistService {
     }
 
     public PsychologistDTO createPsychologist(PsychologistCreateDTO dto) {
-        PsychologistModel model = new PsychologistModel(
-                dto.fullName(),
-                dto.cpf(),
-                dto.phoneNumber(),
-                dto.email(),
-                passwordEncoder.encode(dto.password())
-        );
+        try {
+            PsychologistModel model = new PsychologistModel(
+                    dto.fullName(),
+                    dto.cpf(),
+                    dto.phoneNumber(),
+                    dto.email(),
+                    passwordEncoder.encode(dto.password())
+            );
+        } catch (Exception e) {
+            // TODO: handle exception
+        } finally {
+            return psychologistDTOMapper.apply(psychologistRepository.save(model));
+        }
 
-        return psychologistDTOMapper.apply(psychologistRepository.save(model));
     }
 
     public PsychologistDTO updatePsychologist(Long id, PsychologistCreateDTO dto) {

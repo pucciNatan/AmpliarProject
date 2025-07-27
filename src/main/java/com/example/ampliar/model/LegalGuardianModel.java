@@ -13,10 +13,6 @@ import java.util.List;
 @Entity
 @Table(name = "legal_guardian")
 public class LegalGuardianModel extends PersonAbstract {
-  
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @ManyToMany(mappedBy = "legalGuardians")
     @JsonBackReference
@@ -24,20 +20,10 @@ public class LegalGuardianModel extends PersonAbstract {
 
     public LegalGuardianModel(List<PatientModel> patients, String fullName, String cpf, String phoneNumber) {
         super(fullName, cpf, phoneNumber);
-        setPatients(patients);
-    }
-
-    public void setId(Long id) {
-        if (id != null && id < 0) {
-            throw new IllegalArgumentException("ID não pode ser negativo");
-        }
-        this.id = id;
+        this.patients = (patients != null) ? patients : new ArrayList<>();
     }
 
     public void setPatients(List<PatientModel> patients) {
-        if (patients == null) {
-            throw new IllegalArgumentException("A lista de pacientes não pode ser nula");
-        }
-        this.patients = patients;
+        this.patients = (patients != null) ? patients : new ArrayList<>();
     }
 }

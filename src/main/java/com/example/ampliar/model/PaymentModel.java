@@ -1,7 +1,7 @@
 package com.example.ampliar.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,16 +19,18 @@ public class PaymentModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @NotBlank
+
+    @NotNull(message = "O valor do pagamento é obrigatório")
+    @DecimalMin(value = "0.0", inclusive = false, message = "O valor do pagamento deve ser maior que zero")
     private BigDecimal valor;
 
-    @NotBlank
+    @NotNull(message = "A data do pagamento é obrigatória")
+    @PastOrPresent(message = "A data do pagamento não pode ser futura")
     private LocalDate paymentDate;
 
     @ManyToOne
-    @NotBlank
-    @JoinColumn(name = "payer_id")
+    @JoinColumn(name = "payer_id", nullable = false)
+    @NotNull(message = "O pagador é obrigatório")
     private PayerModel payer;
 
     public void setId(Long id) {
@@ -39,20 +41,14 @@ public class PaymentModel {
     }
 
     public void setValor(BigDecimal valor) {
-        if (valor == null) {
-            throw new IllegalArgumentException("O valor do pagamento é obrigatório");
-        }
-        if (valor.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("O valor do pagamento não pode ser negativo");
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O valor do pagamento deve ser maior que zero");
         }
         this.valor = valor;
     }
 
     public void setPaymentDate(LocalDate paymentDate) {
-        if (paymentDate == null) {
-            throw new IllegalArgumentException("A data do pagamento é obrigatória");
-        }
-        if (paymentDate.isAfter(LocalDate.now())) {
+        if (paymentDate == null || paymentDate.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data do pagamento não pode ser futura");
         }
         this.paymentDate = paymentDate;
