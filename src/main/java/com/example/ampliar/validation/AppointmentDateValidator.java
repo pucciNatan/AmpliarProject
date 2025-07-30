@@ -1,11 +1,10 @@
 package com.example.ampliar.validation;
 
+import com.example.ampliar.validation.constraints.AppointmentDate;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 import java.time.LocalDateTime;
-
-import com.example.ampliar.validation.constraints.AppointmentDate;
 
 public class AppointmentDateValidator implements ConstraintValidator<AppointmentDate, LocalDateTime> {
 
@@ -15,6 +14,6 @@ public class AppointmentDateValidator implements ConstraintValidator<Appointment
             return false;
         }
 
-        return appointmentDate.isAfter(LocalDateTime.now());
+        return appointmentDate.isEqual(LocalDateTime.now()) || appointmentDate.isAfter(LocalDateTime.now());
     }
 }
