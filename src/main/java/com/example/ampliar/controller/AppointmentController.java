@@ -1,8 +1,11 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.AppointmentCreateDTO;
 import com.example.ampliar.dto.AppointmentDTO;
+import com.example.ampliar.dto.AppointmentUpdateDTO;
 import com.example.ampliar.service.AppointmentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,16 +14,21 @@ import java.util.List;
 @RequestMapping("/appointments")
 public class AppointmentController {
 
-    @Autowired
-    private AppointmentService appointmentService;
+    private final AppointmentService appointmentService;
+
+    public AppointmentController(AppointmentService appointmentService) {
+        this.appointmentService = appointmentService;
+    }
 
     @PostMapping
-    public AppointmentDTO createAppointment(@RequestBody AppointmentDTO appointmentDTO) {
+    public AppointmentDTO createAppointment(@Valid @RequestBody AppointmentCreateDTO appointmentDTO) {
         return appointmentService.createAppointment(appointmentDTO);
     }
 
     @PutMapping("/{id}")
-    public AppointmentDTO updateAppointment(@PathVariable Long id, @RequestBody AppointmentDTO updatedDTO) {
+    public AppointmentDTO updateAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody AppointmentUpdateDTO updatedDTO) {
         return appointmentService.updateAppointment(id, updatedDTO);
     }
 

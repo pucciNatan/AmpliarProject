@@ -1,6 +1,8 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.PaymentCreateDTO;
 import com.example.ampliar.dto.PaymentDTO;
+import com.example.ampliar.dto.PaymentUpdateDTO;
 import com.example.ampliar.mapper.PaymentDTOMapper;
 import com.example.ampliar.model.PayerModel;
 import com.example.ampliar.model.PaymentModel;
@@ -8,9 +10,9 @@ import com.example.ampliar.repository.PayerRepository;
 import com.example.ampliar.repository.PaymentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PaymentService {
@@ -19,14 +21,19 @@ public class PaymentService {
     private final PayerRepository payerRepository;
     private final PaymentDTOMapper paymentDTOMapper;
 
-    public PaymentService(PaymentRepository paymentRepository, PayerRepository payerRepository, PaymentDTOMapper paymentDTOMapper) {
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            PayerRepository payerRepository,
+            PaymentDTOMapper paymentDTOMapper
+    ) {
         this.paymentRepository = paymentRepository;
         this.payerRepository = payerRepository;
         this.paymentDTOMapper = paymentDTOMapper;
     }
 
-    public PaymentDTO createPayment(PaymentDTO dto) {
-        PayerModel payer = getPayer(dto.payerId());
+    @Transactional
+    public PaymentDTO createPayment(PaymentCreateDTO dto) {
+        PayerModel payer = getPayerOrThrow(dto.payerId());
 
         PaymentModel payment = new PaymentModel();
         payment.setValor(dto.valor());
@@ -36,30 +43,21 @@ public class PaymentService {
         return paymentDTOMapper.apply(paymentRepository.save(payment));
     }
 
-    public PaymentDTO updatePayment(Long id, PaymentDTO dto) {
+    @Transactional
+    public PaymentDTO updatePayment(Long id, PaymentUpdateDTO dto) {
         PaymentModel existing = paymentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado"));
 
-        existing.setValor(dto.valor());
-        existing.setPaymentDate(dto.paymentDate());
-        existing.setPayer(getPayer(dto.payerId()));
+        if (dto.valor() != null) existing.setValor(dto.valor());
+        if (dto.paymentDate() != null) existing.setPaymentDate(dto.paymentDate());
+        if (dto.payerId() != null) {
+            existing.setPayer(getPayerOrThrow(dto.payerId()));
+        }
 
         return paymentDTOMapper.apply(paymentRepository.save(existing));
     }
 
-    public PaymentDTO getPaymentById(Long id) {
-        return paymentRepository.findById(id)
-                .map(paymentDTOMapper)
-                .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado"));
-    }
-
-    public List<PaymentDTO> getAllPayments() {
-        return paymentRepository.findAll()
-                .stream()
-                .map(paymentDTOMapper)
-                .collect(Collectors.toList());
-    }
-
+    @Transactional
     public void deletePayment(Long id) {
         if (!paymentRepository.existsById(id)) {
             throw new EntityNotFoundException("Pagamento não encontrado");
@@ -67,7 +65,22 @@ public class PaymentService {
         paymentRepository.deleteById(id);
     }
 
-    private PayerModel getPayer(Long id) {
+    @Transactional(readOnly = true)
+    public PaymentDTO getPaymentById(Long id) {
+        return paymentRepository.findById(id)
+                .map(paymentDTOMapper)
+                .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentDTO> getAllPayments() {
+        return paymentRepository.findAll()
+                .stream()
+                .map(paymentDTOMapper)
+                .toList();
+    }
+
+    private PayerModel getPayerOrThrow(Long id) {
         return payerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pagador não encontrado"));
     }

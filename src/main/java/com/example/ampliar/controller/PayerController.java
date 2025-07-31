@@ -1,8 +1,10 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.PayerCreateDTO;
 import com.example.ampliar.dto.PayerDTO;
+import com.example.ampliar.dto.PayerUpdateDTO;
 import com.example.ampliar.service.PayerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,12 +13,20 @@ import java.util.List;
 @RequestMapping("/payers")
 public class PayerController {
 
-    @Autowired
-    private PayerService payerService;
+    private final PayerService payerService;
+
+    public PayerController(PayerService payerService){
+        this.payerService = payerService;
+    }
 
     @PostMapping
-    public PayerDTO createPayer(@RequestBody PayerDTO payer) {
+    public PayerDTO createPayer(@Valid @RequestBody PayerCreateDTO payer) {
         return payerService.createPayer(payer);
+    }
+
+    @PutMapping("/{id}")
+    public PayerDTO updatePayer(@PathVariable Long id, @Valid @RequestBody PayerUpdateDTO updatedPayer) {
+        return payerService.updatePayer(id, updatedPayer);
     }
 
     @GetMapping
@@ -32,11 +42,6 @@ public class PayerController {
     @DeleteMapping("/{id}")
     public void deletePayer(@PathVariable Long id) {
         payerService.deletePayer(id);
-    }
-
-    @PutMapping("/{id}")
-    public PayerDTO updatePayer(@PathVariable Long id, @RequestBody PayerDTO updatedPayer) {
-        return payerService.updatePayer(id, updatedPayer);
     }
 
 }

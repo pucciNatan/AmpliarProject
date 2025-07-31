@@ -2,11 +2,10 @@ package com.example.ampliar.controller;
 
 import com.example.ampliar.dto.AuthRequestDTO;
 import com.example.ampliar.dto.PsychologistCreateDTO;
-import com.example.ampliar.mapper.PsychologistDTOMapper;
 import com.example.ampliar.model.PsychologistModel;
 import com.example.ampliar.security.JwtUtil;
 import com.example.ampliar.service.PsychologistService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -18,33 +17,33 @@ import java.util.Optional;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    private PsychologistService psychologistService;
+    private final PsychologistService psychologistService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PsychologistDTOMapper psychologistDTOMapper;
-
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    public AuthController(PsychologistService psychologistService) {
+        this.psychologistService = psychologistService;
+        this.passwordEncoder = new BCryptPasswordEncoder(); // pode virar um @Bean se for compartilhado
+    }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody PsychologistCreateDTO request) {
+    public ResponseEntity<?> register(@Valid @RequestBody PsychologistCreateDTO request) {
         return ResponseEntity.ok(psychologistService.createPsychologist(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequestDTO request) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDTO request) {
         Optional<PsychologistModel> userOpt = psychologistService.findByEmail(request.email());
 
-        if (userOpt.isPresent()) {
-            PsychologistModel user = userOpt.get();
-            boolean passwordMatches = passwordEncoder.matches(request.password(), user.getPassword());
-
-            if (passwordMatches) {
-                String token = JwtUtil.generateToken(user.getEmail());
-                return ResponseEntity.ok(Map.of("token", token));
-            }
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("error", "Credenciais inválidas"));
         }
 
-        return ResponseEntity.status(401).body("Credenciais inválidas");
+        PsychologistModel user = userOpt.get();
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            return ResponseEntity.status(401).body(Map.of("error", "Credenciais inválidas"));
+        }
+
+        String token = JwtUtil.generateToken(user.getEmail());
+        return ResponseEntity.ok(Map.of("token", token));
     }
 }

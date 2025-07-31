@@ -1,10 +1,6 @@
 package com.example.ampliar.model;
 
-import com.example.ampliar.validation.constraints.AppointmentDate;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,7 +8,6 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "appointment")
 public class AppointmentModel {
@@ -21,44 +16,64 @@ public class AppointmentModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "A data da consulta é obrigatória")
-    @AppointmentDate
+    @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
 
-    @NotNull(message = "O psicólogo é obrigatório")
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "psychologist_id", nullable = false)
     private PsychologistModel psychologist;
 
-    @NotNull(message = "O paciente é obrigatório")
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     private PatientModel patient;
 
-    @Valid
-    @NotNull(message = "O pagamento é obrigatório")
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "payment_id", nullable = false)
     private PaymentModel payment;
 
-    // Setters simples, sem validação duplicada
+    public AppointmentModel(LocalDateTime appointmentDate, PsychologistModel psychologist,
+                            PatientModel patient, PaymentModel payment) {
+        setAppointmentDate(appointmentDate);
+        setPsychologist(psychologist);
+        setPatient(patient);
+        setPayment(payment);
+    }
+
     public void setId(Long id) {
+        if (id != null && id < 0) {
+            throw new IllegalArgumentException("O ID não pode ser negativo");
+        }
         this.id = id;
     }
 
     public void setAppointmentDate(LocalDateTime appointmentDate) {
+        if (appointmentDate == null) {
+            throw new IllegalArgumentException("A data da consulta é obrigatória");
+        }
+        if (appointmentDate.isBefore(LocalDateTime.now().minusYears(10))) {
+            throw new IllegalArgumentException("A data da consulta é muito antiga");
+        }
         this.appointmentDate = appointmentDate;
     }
 
     public void setPsychologist(PsychologistModel psychologist) {
+        if (psychologist == null) {
+            throw new IllegalArgumentException("O psicólogo é obrigatório");
+        }
         this.psychologist = psychologist;
     }
 
     public void setPatient(PatientModel patient) {
+        if (patient == null) {
+            throw new IllegalArgumentException("O paciente é obrigatório");
+        }
         this.patient = patient;
     }
 
     public void setPayment(PaymentModel payment) {
+        if (payment == null) {
+            throw new IllegalArgumentException("O pagamento é obrigatório");
+        }
         this.payment = payment;
     }
 }

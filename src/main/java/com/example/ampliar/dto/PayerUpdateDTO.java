@@ -1,16 +1,11 @@
 package com.example.ampliar.dto;
 
-import java.util.List;
-
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import org.hibernate.validator.constraints.br.CPF;
-
-
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.br.CPF;
 
-public record LegalGuardianUpdateDTO(
+public record PayerUpdateDTO(
         @Size(min = 3, max = 100, message = "O nome deve ter entre 3 e 100 caracteres")
         String fullName,
 
@@ -20,7 +15,5 @@ public record LegalGuardianUpdateDTO(
         @Pattern(
                 regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$",
                 message = "O número de telefone deve estar no formato (11) 91234-5678")
-        String phoneNumber,
-
-        List<Long> patientIds
+        String phoneNumber
 ) {}

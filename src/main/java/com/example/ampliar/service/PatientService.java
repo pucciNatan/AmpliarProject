@@ -1,12 +1,17 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.LegalGuardianDTO;
+import com.example.ampliar.dto.PatientCreateDTO;
 import com.example.ampliar.dto.PatientDTO;
+import com.example.ampliar.dto.PatientUpdateDTO;
 import com.example.ampliar.mapper.PatientDTOMapper;
+import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.model.PatientModel;
 import com.example.ampliar.repository.LegalGuardianRepository;
 import com.example.ampliar.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,8 +32,11 @@ public class PatientService {
         this.patientDTOMapper = patientDTOMapper;
     }
 
-    public PatientDTO createPatient(PatientDTO dto) {
-        var guardians = legalGuardianRepository.findAllById(dto.legalGuardianIds());
+    @Transactional
+    public PatientDTO createPatient(PatientCreateDTO dto) {
+        List<LegalGuardianModel> guardians = (dto.legalGuardianIds() == null || dto.legalGuardianIds().isEmpty())
+                ? List.of()
+                : legalGuardianRepository.findAllById(dto.legalGuardianIds());
 
         PatientModel patient = new PatientModel(
                 dto.birthDate(),
@@ -41,19 +49,37 @@ public class PatientService {
         return patientDTOMapper.apply(patientRepository.save(patient));
     }
 
-    public PatientDTO updatePatient(Long id, PatientDTO dto) {
+    @Transactional
+    public PatientDTO updatePatient(Long id, PatientUpdateDTO dto) {
         PatientModel existing = patientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Paciente não encontrado"));
 
-        existing.setFullName(dto.fullName());
-        existing.setCpf(dto.cpf());
-        existing.setPhoneNumber(dto.phoneNumber());
-        existing.setBirthDate(dto.birthDate());
-        existing.setLegalGuardians(legalGuardianRepository.findAllById(dto.legalGuardianIds()));
+        if (dto.fullName() != null) existing.setFullName(dto.fullName());
+        if (dto.cpf() != null) existing.setCpf(dto.cpf());
+        if (dto.phoneNumber() != null) existing.setPhoneNumber(dto.phoneNumber());
+        if (dto.birthDate() != null) existing.setBirthDate(dto.birthDate());
+        if (dto.legalGuardianIds() != null && !dto.legalGuardianIds().isEmpty()) {
+            List<LegalGuardianModel> guardians = legalGuardianRepository.findAllById(dto.legalGuardianIds());
+
+            if (guardians.size() != dto.legalGuardianIds().size()) {
+                throw new EntityNotFoundException("Um ou mais responsáveis legais não foram encontrados");
+            }
+
+            existing.setLegalGuardians(guardians);
+        }
 
         return patientDTOMapper.apply(patientRepository.save(existing));
     }
 
+    @Transactional
+    public void deletePatient(Long id) {
+        if (!patientRepository.existsById(id)) {
+            throw new EntityNotFoundException("Paciente não encontrado");
+        }
+        patientRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
     public PatientDTO getPatientById(Long id) {
         PatientModel patient = patientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Paciente não encontrado"));
@@ -61,17 +87,11 @@ public class PatientService {
         return patientDTOMapper.apply(patient);
     }
 
+    @Transactional(readOnly = true)
     public List<PatientDTO> getAllPatients() {
         return patientRepository.findAll()
                 .stream()
                 .map(patientDTOMapper)
                 .toList();
-    }
-
-    public void deletePatient(Long id) {
-        if (!patientRepository.existsById(id)) {
-            throw new EntityNotFoundException("Paciente não encontrado");
-        }
-        patientRepository.deleteById(id);
     }
 }

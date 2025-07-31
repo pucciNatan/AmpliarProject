@@ -1,10 +1,6 @@
 package com.example.ampliar.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,23 +14,16 @@ public class PsychologistModel extends PersonAbstract {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Email
-    @NotBlank
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
-    
 
-    @NotBlank(message = "A senha é obrigatória")
-    @Size(min = 6, message = "A senha deve conter no mínimo 6 caracteres")
-    @Pattern(
-        regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{6,}$",
-        message = "A senha deve conter letras e números"
-    )
+    @Column(nullable = false, length = 100)
     private String password;
 
     public PsychologistModel(String fullName, String cpf, String phoneNumber, String email, String password) {
         super(fullName, cpf, phoneNumber);
-        this.setEmail(email);
-        this.setPassword(password);
+        setEmail(email);
+        setPassword(password);
     }
 
     public void setId(Long id) {
@@ -47,6 +36,9 @@ public class PsychologistModel extends PersonAbstract {
     public void setEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw new IllegalArgumentException("O e-mail é obrigatório");
+        }
+        if (!email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+            throw new IllegalArgumentException("O e-mail deve ser válido");
         }
         this.email = email.trim().toLowerCase();
     }

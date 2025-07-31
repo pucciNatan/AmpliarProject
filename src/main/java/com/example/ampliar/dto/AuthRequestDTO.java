@@ -1,7 +1,13 @@
 package com.example.ampliar.dto;
 
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 public record AuthRequestDTO (
-    String email,
-    String password
+        @NotBlank(message = "O email é obrigatório")
+        String email,
+
+        @NotBlank(message = "A senha é obrigatório")
+        String password
 ){}

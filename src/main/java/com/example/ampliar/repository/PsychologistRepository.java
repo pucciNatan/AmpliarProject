@@ -7,5 +7,6 @@ import java.util.Optional;
 
 public interface PsychologistRepository extends JpaRepository<PsychologistModel, Long> {
     Optional<PsychologistModel> findByEmail(String email);
+    Optional<PsychologistModel> findByCpf(String cpf);
 }
 

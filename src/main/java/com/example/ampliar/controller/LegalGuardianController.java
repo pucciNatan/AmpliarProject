@@ -1,8 +1,10 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.LegalGuardianCreateDTO;
 import com.example.ampliar.dto.LegalGuardianDTO;
+import com.example.ampliar.dto.LegalGuardianUpdateDTO;
 import com.example.ampliar.service.LegalGuardianService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,16 +13,19 @@ import java.util.List;
 @RequestMapping("/guardians")
 public class LegalGuardianController {
 
-    @Autowired
-    private LegalGuardianService legalGuardianService;
+    private final LegalGuardianService legalGuardianService;
+
+    public LegalGuardianController(LegalGuardianService legalGuardianService) {
+        this.legalGuardianService = legalGuardianService;
+    }
 
     @PostMapping
-    public LegalGuardianDTO createGuardian(@RequestBody LegalGuardianDTO guardianDTO) {
+    public LegalGuardianDTO createGuardian(@Valid @RequestBody LegalGuardianCreateDTO guardianDTO) {
         return legalGuardianService.createGuardian(guardianDTO);
     }
 
     @PutMapping("/{id}")
-    public LegalGuardianDTO updateGuardian(@PathVariable Long id, @RequestBody LegalGuardianDTO updatedDTO) {
+    public LegalGuardianDTO updateGuardian(@PathVariable Long id, @Valid @RequestBody LegalGuardianUpdateDTO updatedDTO) {
         return legalGuardianService.updateGuardian(id, updatedDTO);
     }
 

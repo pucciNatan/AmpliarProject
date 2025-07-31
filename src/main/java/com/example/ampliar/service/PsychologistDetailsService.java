@@ -19,8 +19,12 @@ public class PsychologistDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        PsychologistModel psychologist = psychologistRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Psicólogo não encontrado com email: " + email));
+        if (email == null || email.trim().isEmpty()) {
+            throw new UsernameNotFoundException("O email informado é inválido ou vazio");
+        }
+
+        PsychologistModel psychologist = psychologistRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new UsernameNotFoundException("Psicólogo não encontrado com o email: " + email));
 
         return User.builder()
                 .username(psychologist.getEmail())

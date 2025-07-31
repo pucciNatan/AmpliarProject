@@ -20,17 +20,14 @@ public class PaymentModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "O valor do pagamento é obrigatório")
-    @DecimalMin(value = "0.0", inclusive = false, message = "O valor do pagamento deve ser maior que zero")
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
 
-    @NotNull(message = "A data do pagamento é obrigatória")
-    @PastOrPresent(message = "A data do pagamento não pode ser futura")
+    @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
 
-    @ManyToOne
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "payer_id", nullable = false)
-    @NotNull(message = "O pagador é obrigatório")
     private PayerModel payer;
 
     public void setId(Long id) {

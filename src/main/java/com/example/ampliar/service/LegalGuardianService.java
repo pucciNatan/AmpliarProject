@@ -1,6 +1,8 @@
 package com.example.ampliar.service;
 
+import com.example.ampliar.dto.LegalGuardianCreateDTO;
 import com.example.ampliar.dto.LegalGuardianDTO;
+import com.example.ampliar.dto.LegalGuardianUpdateDTO;
 import com.example.ampliar.mapper.LegalGuardianDTOMapper;
 import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.model.PatientModel;
@@ -8,6 +10,7 @@ import com.example.ampliar.repository.LegalGuardianRepository;
 import com.example.ampliar.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,8 +32,14 @@ public class LegalGuardianService {
         this.legalGuardianDTOMapper = legalGuardianDTOMapper;
     }
 
-    public LegalGuardianDTO createGuardian(LegalGuardianDTO dto) {
-        List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
+    @Transactional
+    public LegalGuardianDTO createGuardian(LegalGuardianCreateDTO dto) {
+        List<Long> requestedIds = dto.patientIds();
+        List<PatientModel> patients = patientRepository.findAllById(requestedIds);
+
+        if (patients.size() != requestedIds.size()) {
+            throw new IllegalArgumentException("Um ou mais pacientes informados não existem");
+        }
 
         LegalGuardianModel model = new LegalGuardianModel(
                 patients,
@@ -42,35 +51,52 @@ public class LegalGuardianService {
         return legalGuardianDTOMapper.apply(legalGuardianRepository.save(model));
     }
 
-    public LegalGuardianDTO updateGuardian(Long id, LegalGuardianDTO dto) {
+    @Transactional
+    public LegalGuardianDTO updateGuardian(Long id, LegalGuardianUpdateDTO dto) {
         LegalGuardianModel existing = legalGuardianRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Responsável legal não encontrado"));
 
-        existing.setFullName(dto.fullName());
-        existing.setCpf(dto.cpf());
-        existing.setPhoneNumber(dto.phoneNumber());
-        existing.setPatients(patientRepository.findAllById(dto.patientIds()));
+        if (dto.fullName() != null) existing.setFullName(dto.fullName());
+        if (dto.cpf() != null) existing.setCpf(dto.cpf());
+        if (dto.phoneNumber() != null) existing.setPhoneNumber(dto.phoneNumber());
+
+        if (dto.patientIds() != null) {
+            if (dto.patientIds().isEmpty()) {
+                throw new IllegalArgumentException("A lista de pacientes não pode estar vazia");
+            }
+
+            List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
+
+            if (patients.size() != dto.patientIds().size()) {
+                throw new IllegalArgumentException("Um ou mais pacientes informados não existem");
+            }
+
+            existing.setPatients(patients);
+        }
 
         return legalGuardianDTOMapper.apply(legalGuardianRepository.save(existing));
     }
 
+    @Transactional
+    public void deleteGuardian(Long id) {
+        if (!legalGuardianRepository.existsById(id)) {
+            throw new EntityNotFoundException("Responsável legal não encontrado");
+        }
+        legalGuardianRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
     public LegalGuardianDTO getGuardianById(Long id) {
         return legalGuardianRepository.findById(id)
                 .map(legalGuardianDTOMapper)
                 .orElseThrow(() -> new EntityNotFoundException("Responsável legal não encontrado"));
     }
 
+    @Transactional(readOnly = true)
     public List<LegalGuardianDTO> getAllGuardians() {
         return legalGuardianRepository.findAll()
                 .stream()
                 .map(legalGuardianDTOMapper)
                 .collect(Collectors.toList());
-    }
-
-    public void deleteGuardian(Long id) {
-        if (!legalGuardianRepository.existsById(id)) {
-            throw new EntityNotFoundException("Responsável legal não encontrado");
-        }
-        legalGuardianRepository.deleteById(id);
     }
 }

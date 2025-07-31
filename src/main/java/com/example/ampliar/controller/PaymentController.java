@@ -1,9 +1,10 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.PaymentCreateDTO;
 import com.example.ampliar.dto.PaymentDTO;
-import com.example.ampliar.model.PaymentModel;
+import com.example.ampliar.dto.PaymentUpdateDTO;
 import com.example.ampliar.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,16 +13,19 @@ import java.util.List;
 @RequestMapping("/payments")
 public class PaymentController {
 
-    @Autowired
-    private PaymentService paymentService;
+    private final PaymentService paymentService;
+
+    public PaymentController(PaymentService paymentService){
+        this.paymentService = paymentService;
+    }
 
     @PostMapping
-    public PaymentDTO createPayment(@RequestBody PaymentDTO payment) {
+    public PaymentDTO createPayment(@Valid @RequestBody PaymentCreateDTO payment) {
         return paymentService.createPayment(payment);
     }
 
     @PutMapping("/{id}")
-    public PaymentDTO updatePayment(@PathVariable Long id, @RequestBody PaymentDTO updatedPayment) {
+    public PaymentDTO updatePayment(@PathVariable Long id, @Valid @RequestBody PaymentUpdateDTO updatedPayment) {
         return paymentService.updatePayment(id, updatedPayment);
     }
 

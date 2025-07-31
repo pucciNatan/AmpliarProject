@@ -1,7 +1,10 @@
 package com.example.ampliar.controller;
 
+import com.example.ampliar.dto.PatientCreateDTO;
 import com.example.ampliar.dto.PatientDTO;
+import com.example.ampliar.dto.PatientUpdateDTO;
 import com.example.ampliar.service.PatientService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,16 +14,19 @@ import java.util.List;
 @RequestMapping("/patients")
 public class PatientController {
 
-    @Autowired
-    private PatientService patientService;
+    private final PatientService patientService;
+
+    public PatientController(PatientService patientService) {
+        this.patientService = patientService;
+    }
 
     @PostMapping
-    public PatientDTO createPatient(@RequestBody PatientDTO patient) {
+    public PatientDTO createPatient(@Valid @RequestBody PatientCreateDTO patient) {
         return patientService.createPatient(patient);
     }
 
     @PutMapping("/{id}")
-    public PatientDTO updatePatient(@PathVariable Long id, @RequestBody PatientDTO updatedPatient) {
+    public PatientDTO updatePatient(@PathVariable Long id, @Valid @RequestBody PatientUpdateDTO updatedPatient) {
         return patientService.updatePatient(id, updatedPatient);
     }
 

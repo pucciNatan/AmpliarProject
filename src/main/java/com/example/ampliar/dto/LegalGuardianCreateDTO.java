@@ -2,12 +2,9 @@ package com.example.ampliar.dto;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import org.hibernate.validator.constraints.br.CPF;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 public record LegalGuardianCreateDTO(
         @NotBlank(message = "O nome completo é obrigatório")
@@ -24,6 +21,6 @@ public record LegalGuardianCreateDTO(
                 message = "O número de telefone deve estar no formato (11) 91234-5678")
         String phoneNumber,
 
-        @NotEmpty(message = "É necessário associar pelo menos um paciente")
+        @NotNull(message = "É necessário associar pelo menos um paciente")
         List<Long> patientIds
 ) {}

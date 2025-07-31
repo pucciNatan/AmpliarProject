@@ -13,6 +13,9 @@ import java.util.List;
 @Entity
 @Table(name = "legal_guardian")
 public class LegalGuardianModel extends PersonAbstract {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    Long id;
 
     @ManyToMany(mappedBy = "legalGuardians")
     @JsonBackReference
