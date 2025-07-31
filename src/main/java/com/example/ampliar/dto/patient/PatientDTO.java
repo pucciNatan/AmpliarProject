@@ -1,4 +1,4 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.patient;
 
 import java.time.LocalDate;
 import java.util.List;

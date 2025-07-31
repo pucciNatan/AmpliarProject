@@ -1,11 +1,10 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.dto.PatientCreateDTO;
-import com.example.ampliar.dto.PatientDTO;
-import com.example.ampliar.dto.PatientUpdateDTO;
+import com.example.ampliar.dto.patient.PatientCreateDTO;
+import com.example.ampliar.dto.patient.PatientDTO;
+import com.example.ampliar.dto.patient.PatientUpdateDTO;
 import com.example.ampliar.service.PatientService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

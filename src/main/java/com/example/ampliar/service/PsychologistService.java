@@ -1,8 +1,8 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.dto.PsychologistCreateDTO;
-import com.example.ampliar.dto.PsychologistDTO;
-import com.example.ampliar.dto.PsychologistUpdateDTO;
+import com.example.ampliar.dto.psychologist.PsychologistCreateDTO;
+import com.example.ampliar.dto.psychologist.PsychologistDTO;
+import com.example.ampliar.dto.psychologist.PsychologistUpdateDTO;
 import com.example.ampliar.mapper.PsychologistDTOMapper;
 import com.example.ampliar.model.PsychologistModel;
 import com.example.ampliar.repository.PsychologistRepository;

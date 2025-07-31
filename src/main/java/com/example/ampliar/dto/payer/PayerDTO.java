@@ -1,4 +1,4 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.payer;
 
 public record PayerDTO(
         Long id,

@@ -1,8 +1,7 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.legalGuardian;
 
 import java.util.List;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.hibernate.validator.constraints.br.CPF;
 

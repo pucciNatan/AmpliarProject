@@ -1,6 +1,6 @@
 package com.example.ampliar.mapper;
 
-import com.example.ampliar.dto.LegalGuardianDTO;
+import com.example.ampliar.dto.legalGuardian.LegalGuardianDTO;
 import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.model.PatientModel;
 import org.springframework.stereotype.Service;

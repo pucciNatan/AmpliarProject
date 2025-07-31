@@ -1,6 +1,5 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.payer;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;

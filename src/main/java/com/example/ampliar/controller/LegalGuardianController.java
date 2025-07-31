@@ -1,8 +1,8 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.dto.LegalGuardianCreateDTO;
-import com.example.ampliar.dto.LegalGuardianDTO;
-import com.example.ampliar.dto.LegalGuardianUpdateDTO;
+import com.example.ampliar.dto.legalGuardian.LegalGuardianCreateDTO;
+import com.example.ampliar.dto.legalGuardian.LegalGuardianDTO;
+import com.example.ampliar.dto.legalGuardian.LegalGuardianUpdateDTO;
 import com.example.ampliar.service.LegalGuardianService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;

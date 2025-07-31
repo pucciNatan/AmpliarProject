@@ -1,8 +1,8 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.dto.PaymentCreateDTO;
-import com.example.ampliar.dto.PaymentDTO;
-import com.example.ampliar.dto.PaymentUpdateDTO;
+import com.example.ampliar.dto.payment.PaymentCreateDTO;
+import com.example.ampliar.dto.payment.PaymentDTO;
+import com.example.ampliar.dto.payment.PaymentUpdateDTO;
 import com.example.ampliar.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;

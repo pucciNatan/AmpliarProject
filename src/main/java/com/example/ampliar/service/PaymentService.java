@@ -1,8 +1,8 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.dto.PaymentCreateDTO;
-import com.example.ampliar.dto.PaymentDTO;
-import com.example.ampliar.dto.PaymentUpdateDTO;
+import com.example.ampliar.dto.payment.PaymentCreateDTO;
+import com.example.ampliar.dto.payment.PaymentDTO;
+import com.example.ampliar.dto.payment.PaymentUpdateDTO;
 import com.example.ampliar.mapper.PaymentDTOMapper;
 import com.example.ampliar.model.PayerModel;
 import com.example.ampliar.model.PaymentModel;

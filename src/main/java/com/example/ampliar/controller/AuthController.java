@@ -1,7 +1,7 @@
 package com.example.ampliar.controller;
 
 import com.example.ampliar.dto.AuthRequestDTO;
-import com.example.ampliar.dto.PsychologistCreateDTO;
+import com.example.ampliar.dto.psychologist.PsychologistCreateDTO;
 import com.example.ampliar.model.PsychologistModel;
 import com.example.ampliar.security.JwtUtil;
 import com.example.ampliar.service.PsychologistService;

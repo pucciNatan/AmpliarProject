@@ -1,8 +1,8 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.dto.AppointmentDTO;
-import com.example.ampliar.dto.AppointmentCreateDTO;
-import com.example.ampliar.dto.AppointmentUpdateDTO;
+import com.example.ampliar.dto.appointment.AppointmentDTO;
+import com.example.ampliar.dto.appointment.AppointmentCreateDTO;
+import com.example.ampliar.dto.appointment.AppointmentUpdateDTO;
 import com.example.ampliar.mapper.AppointmentDTOMapper;
 import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.model.PatientModel;
@@ -13,7 +13,6 @@ import com.example.ampliar.repository.PatientRepository;
 import com.example.ampliar.repository.PaymentRepository;
 import com.example.ampliar.repository.PsychologistRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,34 +1,28 @@
-package com.example.ampliar.dto;
-
-import java.time.LocalDate;
-import java.util.List;
+package com.example.ampliar.dto.patient;
 
 import com.example.ampliar.validation.constraints.BirthDate;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;
 
-public record PatientCreateDTO(
-        @NotBlank(message = "O nome é obrigatório")
+import java.time.LocalDate;
+import java.util.List;
+
+public record PatientUpdateDTO (
         @Size(min = 3, max = 100, message = "O nome deve ter entre 3 e 100 caracteres")
         String fullName,
 
-        @NotBlank(message = "O CPF é obrigatório")
         @CPF
         String cpf,
 
-        @NotBlank(message = "O número de telefone é obrigatório")
         @Pattern(
                 regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$",
                 message = "O número de telefone deve estar no formato (11) 91234-5678")
         String phoneNumber,
 
-        @NotNull(message = "O aniversário é obrigatório")
         @BirthDate
         LocalDate birthDate,
 
         List<Long> legalGuardianIds
 ){}
+

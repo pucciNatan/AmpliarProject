@@ -1,4 +1,4 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.appointment;
 
 import java.time.LocalDateTime;
 

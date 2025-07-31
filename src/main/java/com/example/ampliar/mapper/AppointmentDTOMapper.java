@@ -1,6 +1,6 @@
 package com.example.ampliar.mapper;
 
-import com.example.ampliar.dto.AppointmentDTO;
+import com.example.ampliar.dto.appointment.AppointmentDTO;
 import com.example.ampliar.model.AppointmentModel;
 import org.springframework.stereotype.Service;
 

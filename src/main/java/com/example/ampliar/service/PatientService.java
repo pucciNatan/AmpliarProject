@@ -1,9 +1,8 @@
 package com.example.ampliar.service;
 
-import com.example.ampliar.dto.LegalGuardianDTO;
-import com.example.ampliar.dto.PatientCreateDTO;
-import com.example.ampliar.dto.PatientDTO;
-import com.example.ampliar.dto.PatientUpdateDTO;
+import com.example.ampliar.dto.patient.PatientCreateDTO;
+import com.example.ampliar.dto.patient.PatientDTO;
+import com.example.ampliar.dto.patient.PatientUpdateDTO;
 import com.example.ampliar.mapper.PatientDTOMapper;
 import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.model.PatientModel;

@@ -1,8 +1,8 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.dto.AppointmentCreateDTO;
-import com.example.ampliar.dto.AppointmentDTO;
-import com.example.ampliar.dto.AppointmentUpdateDTO;
+import com.example.ampliar.dto.appointment.AppointmentCreateDTO;
+import com.example.ampliar.dto.appointment.AppointmentDTO;
+import com.example.ampliar.dto.appointment.AppointmentUpdateDTO;
 import com.example.ampliar.service.AppointmentService;
 import jakarta.validation.Valid;
 

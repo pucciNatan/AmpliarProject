@@ -1,4 +1,4 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.legalGuardian;
 
 import java.util.List;
 

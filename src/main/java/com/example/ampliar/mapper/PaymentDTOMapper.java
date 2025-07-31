@@ -1,6 +1,6 @@
 package com.example.ampliar.mapper;
 
-import com.example.ampliar.dto.PaymentDTO;
+import com.example.ampliar.dto.payment.PaymentDTO;
 import com.example.ampliar.model.PaymentModel;
 import org.springframework.stereotype.Service;
 

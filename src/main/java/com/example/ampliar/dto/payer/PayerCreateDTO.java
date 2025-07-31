@@ -1,4 +1,4 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.payer;
 
 import org.hibernate.validator.constraints.br.CPF;
 

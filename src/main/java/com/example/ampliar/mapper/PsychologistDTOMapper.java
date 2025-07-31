@@ -1,6 +1,6 @@
 package com.example.ampliar.mapper;
 
-import com.example.ampliar.dto.PsychologistDTO;
+import com.example.ampliar.dto.psychologist.PsychologistDTO;
 import com.example.ampliar.model.PsychologistModel;
 import org.springframework.stereotype.Service;
 

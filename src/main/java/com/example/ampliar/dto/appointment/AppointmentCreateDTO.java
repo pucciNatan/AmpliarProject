@@ -1,9 +1,8 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.appointment;
 
 import java.time.LocalDateTime;
 import com.example.ampliar.validation.constraints.AppointmentDate;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record AppointmentCreateDTO(

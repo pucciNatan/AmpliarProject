@@ -1,11 +1,9 @@
 package com.example.ampliar.controller;
 
-import com.example.ampliar.dto.PsychologistCreateDTO;
-import com.example.ampliar.dto.PsychologistDTO;
-import com.example.ampliar.dto.PsychologistUpdateDTO;
+import com.example.ampliar.dto.psychologist.PsychologistDTO;
+import com.example.ampliar.dto.psychologist.PsychologistUpdateDTO;
 import com.example.ampliar.service.PsychologistService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

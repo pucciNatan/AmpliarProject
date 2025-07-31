@@ -1,4 +1,4 @@
-package com.example.ampliar.dto;
+package com.example.ampliar.dto.psychologist;
 
 public record PsychologistDTO(
         Long id,
