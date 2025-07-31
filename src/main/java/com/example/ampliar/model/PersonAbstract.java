@@ -30,7 +30,9 @@ public abstract class PersonAbstract {
     @CPF
     private String cpf;
     
-    @Pattern(regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$")
+    @Pattern(
+        regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$",
+        message = "O número de telefone deve estar no formato (11) 91234-5678")
     private String phoneNumber;
 
     public PersonAbstract(String fullName, String cpf, String phoneNumber) {

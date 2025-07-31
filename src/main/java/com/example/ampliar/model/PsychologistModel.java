@@ -16,8 +16,6 @@ public class PsychologistModel extends PersonAbstract {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String email;
-
     @Email
     @NotBlank
     private String email;
