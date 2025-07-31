@@ -27,12 +27,10 @@ public abstract class PersonAbstract {
     @NotBlank(message = "O CPF é obrigatório")
     @CPF(message = "CPF inválido")
     @Column(unique = true)
-    private String cpf;
-
+    private String cpf;    
     @Pattern(
         regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$",
-        message = "Formato de telefone inválido. Ex: (11) 91234-5678"
-    )
+        message = "O número de telefone deve estar no formato (11) 91234-5678")
     private String phoneNumber;
 
     public PersonAbstract(String fullName, String cpf, String phoneNumber) {

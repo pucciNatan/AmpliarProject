@@ -18,13 +18,10 @@ public class PsychologistModel extends PersonAbstract {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Email(message = "E-mail inválido")
-    @NotBlank(message = "O e-mail é obrigatório")
-    @Pattern(
-        regexp = "^[\\w\\.-]+@[\\w\\.-]+\\.\\w{2,}$",
-        message = "Formato de e-mail inválido"
-    )
+    @Email
+    @NotBlank
     private String email;
+    
 
     @NotBlank(message = "A senha é obrigatória")
     @Size(min = 6, message = "A senha deve conter no mínimo 6 caracteres")

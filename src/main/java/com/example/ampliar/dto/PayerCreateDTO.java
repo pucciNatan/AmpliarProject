@@ -1,24 +1,23 @@
 package com.example.ampliar.dto;
 
 import org.hibernate.validator.constraints.br.CPF;
-import jakarta.validation.constraints.Email;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record PsychologistUpdateDTO(
+public record PayerCreateDTO(
+        @NotBlank(message = "O nome completo é obrigatório")
         @Size(min = 3, max = 100, message = "O nome deve ter entre 3 e 100 caracteres")
         String fullName,
 
+        @NotBlank(message = "O CPF é obrigatório")
         @CPF(message = "O CPF deve ser válido")
         String cpf,
 
-        @Pattern(regexp = "\\d{10,11}", message = "O telefone deve conter 10 ou 11 dígitos numéricos")
-        String phoneNumber,
-
-        @Email(message = "O email deve ser válido")
-        String email,
-
-        @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
-        String password
+        @NotBlank(message = "O número de telefone é obrigatório")
+        @Pattern(
+                regexp = "^\\(\\d{2}\\) \\d{4,5}-\\d{4}$",
+                message = "O número de telefone deve estar no formato (11) 91234-5678")
+        String phoneNumber
 ) {}
