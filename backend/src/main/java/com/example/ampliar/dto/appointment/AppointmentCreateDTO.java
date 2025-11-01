@@ -1,4 +1,3 @@
-// AppointmentCreateDTO.java
 package com.example.ampliar.dto.appointment;
 
 import java.time.LocalDateTime;
@@ -14,11 +13,10 @@ public record AppointmentCreateDTO(
         @NotNull(message = "O psicólogo é obrigatório.")
         Long psychologistId,
 
-        // aceita "patientIds" (novo) e "patientId" (legado, único)
         @NotNull(message = "Informe pelo menos um paciente.")
         @JsonAlias({"patientId"})
         List<Long> patientIds,
 
-        @NotNull(message = "O pagamento é obrigatório.")
+        // ✅ CORREÇÃO: Pagamento opcional (removido @NotNull)
         Long paymentId
 ) {}

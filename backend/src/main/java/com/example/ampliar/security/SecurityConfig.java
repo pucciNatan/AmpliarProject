@@ -22,10 +22,12 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final JwtUtil jwtUtil; // ✅ CORREÇÃO: Adicionado JwtUtil
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService, JwtUtil jwtUtil) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
+        this.jwtUtil = jwtUtil; // ✅ CORREÇÃO: Injeta JwtUtil
     }
 
     @Bean

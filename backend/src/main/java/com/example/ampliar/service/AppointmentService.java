@@ -14,6 +14,7 @@ import com.example.ampliar.repository.PaymentRepository;
 import com.example.ampliar.repository.PsychologistRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
@@ -31,122 +33,199 @@ public class AppointmentService {
     private final PaymentRepository paymentRepository;
     private final AppointmentDTOMapper mapper;
 
+    @Transactional
     public AppointmentDTO createAppointment(AppointmentCreateDTO dto) {
-        // 1) psicólogo
-        PsychologistModel psych = psychologistRepository.findById(dto.psychologistId())
-                .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado"));
-
-        // 2) pacientes
-        List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
-        if (patients.size() != dto.patientIds().size()) {
-            throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
-        }
-
-        // 3) valida conflitos
-        validatePsychologistAvailability(dto.appointmentDate(), psych.getId());
-        for (PatientModel p : patients) {
-            validatePatientAvailability(dto.appointmentDate(), p.getId());
-        }
-
-        // 4) pagamento (vem por ID no DTO)
-        PaymentModel payment = paymentRepository.findById(dto.paymentId())
-                .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado"));
-
-        // 5) persiste appointment
-        AppointmentModel model = new AppointmentModel();
-        model.setAppointmentDate(dto.appointmentDate());
-        model.setPsychologist(psych);
-        model.setPatients(patients);
-        model.setPayment(payment);
-
-        model = appointmentRepository.save(model);
-        return mapper.apply(model);
-    }
-
-    public AppointmentDTO updateAppointment(Long id, AppointmentUpdateDTO dto) {
-        AppointmentModel model = appointmentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Agendamento não encontrado"));
-
-        // appointmentDate
-        if (dto.appointmentDate() != null) {
-            validatePsychologistAvailability(dto.appointmentDate(), model.getPsychologist().getId());
-            for (PatientModel p : model.getPatients()) {
-                validatePatientAvailability(dto.appointmentDate(), p.getId());
-            }
-            model.setAppointmentDate(dto.appointmentDate());
-        }
-
-        // psychologistId (opcional)
-        if (dto.psychologistId() != null && !dto.psychologistId().equals(model.getPsychologist().getId())) {
+        log.info("Criando agendamento para psicólogo ID: {}", dto.psychologistId());
+        
+        try {
             PsychologistModel psych = psychologistRepository.findById(dto.psychologistId())
-                    .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado"));
-            // revalida conflito com a nova agenda
-            validatePsychologistAvailability(model.getAppointmentDate(), psych.getId());
-            model.setPsychologist(psych);
-        }
+                    .orElseThrow(() -> {
+                        log.error("Psicólogo não encontrado ID: {}", dto.psychologistId());
+                        return new EntityNotFoundException("Psicólogo não encontrado");
+                    });
 
-        // patientIds (opcional)
-        if (dto.patientIds() != null && !dto.patientIds().isEmpty()) {
             List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
             if (patients.size() != dto.patientIds().size()) {
+                log.error("Pacientes não encontrados. Esperados: {}, Encontrados: {}", 
+                         dto.patientIds().size(), patients.size());
                 throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
             }
+
+            validatePsychologistAvailability(dto.appointmentDate(), psych.getId());
             for (PatientModel p : patients) {
-                validatePatientAvailability(model.getAppointmentDate(), p.getId());
+                validatePatientAvailability(dto.appointmentDate(), p.getId());
             }
+
+            // ✅ CORREÇÃO: Pagamento opcional
+            PaymentModel payment = null;
+            if (dto.paymentId() != null) {
+                payment = paymentRepository.findById(dto.paymentId())
+                        .orElseThrow(() -> {
+                            log.error("Pagamento não encontrado ID: {}", dto.paymentId());
+                            return new EntityNotFoundException("Pagamento não encontrado");
+                        });
+                log.debug("Pagamento associado: {}", dto.paymentId());
+            } else {
+                log.debug("Agendamento criado sem pagamento associado");
+            }
+
+            AppointmentModel model = new AppointmentModel();
+            model.setAppointmentDate(dto.appointmentDate());
+            model.setPsychologist(psych);
             model.setPatients(patients);
-        }
-
-        // paymentId (opcional)
-        if (dto.paymentId() != null) {
-            PaymentModel payment = paymentRepository.findById(dto.paymentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Pagamento não encontrado"));
             model.setPayment(payment);
-        }
 
-        model = appointmentRepository.save(model);
-        return mapper.apply(model);
+            model = appointmentRepository.save(model);
+            log.info("Agendamento criado com sucesso ID: {}", model.getId());
+            return mapper.apply(model);
+            
+        } catch (EntityNotFoundException e) {
+            log.error("Erro ao criar agendamento - recurso não encontrado: {}", e.getMessage());
+            throw e;
+        } catch (IllegalStateException e) {
+            log.warn("Conflito de agendamento: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Erro inesperado ao criar agendamento", e);
+            throw new RuntimeException("Erro interno do servidor", e);
+        }
     }
 
-    /* ====== os 3 que o controller chama ====== */
+    @Transactional
+    public AppointmentDTO updateAppointment(Long id, AppointmentUpdateDTO dto) {
+        log.info("Atualizando agendamento ID: {}", id);
+        
+        try {
+            AppointmentModel model = appointmentRepository.findById(id)
+                    .orElseThrow(() -> {
+                        log.error("Agendamento não encontrado ID: {}", id);
+                        return new EntityNotFoundException("Agendamento não encontrado");
+                    });
+
+            if (dto.appointmentDate() != null) {
+                validatePsychologistAvailability(dto.appointmentDate(), model.getPsychologist().getId());
+                for (PatientModel p : model.getPatients()) {
+                    validatePatientAvailability(dto.appointmentDate(), p.getId());
+                }
+                model.setAppointmentDate(dto.appointmentDate());
+                log.debug("Data do agendamento atualizada");
+            }
+
+            if (dto.psychologistId() != null && !dto.psychologistId().equals(model.getPsychologist().getId())) {
+                PsychologistModel psych = psychologistRepository.findById(dto.psychologistId())
+                        .orElseThrow(() -> {
+                            log.error("Psicólogo não encontrado ID: {}", dto.psychologistId());
+                            return new EntityNotFoundException("Psicólogo não encontrado");
+                        });
+                validatePsychologistAvailability(model.getAppointmentDate(), psych.getId());
+                model.setPsychologist(psych);
+                log.debug("Psicólogo do agendamento atualizado");
+            }
+
+            if (dto.patientIds() != null && !dto.patientIds().isEmpty()) {
+                List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
+                if (patients.size() != dto.patientIds().size()) {
+                    log.error("Pacientes não encontrados na atualização. Esperados: {}, Encontrados: {}", 
+                             dto.patientIds().size(), patients.size());
+                    throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
+                }
+                for (PatientModel p : patients) {
+                    validatePatientAvailability(model.getAppointmentDate(), p.getId());
+                }
+                model.setPatients(patients);
+                log.debug("Pacientes do agendamento atualizados");
+            }
+
+            // ✅ CORREÇÃO: Pagamento opcional
+            if (dto.paymentId() != null) {
+                PaymentModel payment = paymentRepository.findById(dto.paymentId())
+                        .orElseThrow(() -> {
+                            log.error("Pagamento não encontrado ID: {}", dto.paymentId());
+                            return new EntityNotFoundException("Pagamento não encontrado");
+                        });
+                model.setPayment(payment);
+                log.debug("Pagamento do agendamento atualizado");
+            } else if (dto.paymentId() == null && model.getPayment() != null) {
+                // Permite remover o pagamento definindo como null
+                model.setPayment(null);
+                log.debug("Pagamento removido do agendamento");
+            }
+
+            model = appointmentRepository.save(model);
+            log.info("Agendamento atualizado com sucesso ID: {}", id);
+            return mapper.apply(model);
+            
+        } catch (Exception e) {
+            log.error("Erro ao atualizar agendamento ID: {}", id, e);
+            throw e;
+        }
+    }
 
     @Transactional
     public void deleteAppointment(Long id) {
-        if (!appointmentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Agendamento não encontrado");
+        log.info("Excluindo agendamento ID: {}", id);
+        try {
+            if (!appointmentRepository.existsById(id)) {
+                log.warn("Tentativa de excluir agendamento inexistente ID: {}", id);
+                throw new EntityNotFoundException("Agendamento não encontrado");
+            }
+            appointmentRepository.deleteById(id);
+            log.info("Agendamento excluído com sucesso ID: {}", id);
+        } catch (Exception e) {
+            log.error("Erro ao excluir agendamento ID: {}", id, e);
+            throw e;
         }
-        appointmentRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
     public AppointmentDTO getAppointmentById(Long id) {
-        AppointmentModel model = appointmentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Agendamento não encontrado"));
-        return mapper.apply(model);
+        log.debug("Buscando agendamento por ID: {}", id);
+        try {
+            AppointmentModel model = appointmentRepository.findById(id)
+                    .orElseThrow(() -> {
+                        log.warn("Agendamento não encontrado ID: {}", id);
+                        return new EntityNotFoundException("Agendamento não encontrado");
+                    });
+            log.debug("Agendamento encontrado ID: {}", id);
+            return mapper.apply(model);
+        } catch (Exception e) {
+            log.error("Erro ao buscar agendamento ID: {}", id, e);
+            throw e;
+        }
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentDTO> getAllAppointments() {
-        return appointmentRepository.findAll()
-                .stream()
-                .map(mapper)          // <- mapper implementa Function<AppointmentModel, AppointmentDTO>
-                .collect(Collectors.toList());
+        log.debug("Buscando todos os agendamentos");
+        try {
+            var appointments = appointmentRepository.findAll()
+                    .stream()
+                    .map(mapper)
+                    .collect(Collectors.toList());
+            log.debug("Encontrados {} agendamentos", appointments.size());
+            return appointments;
+        } catch (Exception e) {
+            log.error("Erro ao buscar todos os agendamentos", e);
+            throw e;
+        }
     }
 
-    /* ====== validações ====== */
-
     private void validatePsychologistAvailability(LocalDateTime date, Long psychologistId) {
+        log.debug("Validando disponibilidade do psicólogo ID: {} para data: {}", psychologistId, date);
         boolean conflict = appointmentRepository
                 .existsByAppointmentDateAndPsychologistId(date, psychologistId);
         if (conflict) {
+            log.warn("Conflito de horário para psicólogo ID: {} na data: {}", psychologistId, date);
             throw new IllegalStateException("O psicólogo já tem um agendamento nesse horário");
         }
     }
 
     private void validatePatientAvailability(LocalDateTime date, Long patientId) {
+        log.debug("Validando disponibilidade do paciente ID: {} para data: {}", patientId, date);
         boolean conflict = appointmentRepository
                 .existsByAppointmentDateAndPatients_Id(date, patientId);
         if (conflict) {
+            log.warn("Conflito de horário para paciente ID: {} na data: {}", patientId, date);
             throw new IllegalStateException("O paciente já tem um agendamento nesse horário");
         }
     }

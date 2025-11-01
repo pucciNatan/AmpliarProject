@@ -5,6 +5,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -14,6 +17,10 @@ public class PayerModel extends PersonAbstract {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     Long id;
+
+    // ✅ CORREÇÃO: Relacionamento com cascade delete
+    @OneToMany(mappedBy = "payer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PaymentModel> payments = new ArrayList<>();
 
     public PayerModel(String fullName, String cpf, String phoneNumber) {
         super(fullName, cpf, phoneNumber);
@@ -26,4 +33,18 @@ public class PayerModel extends PersonAbstract {
         this.id = id;
     }
 
+    // ✅ CORREÇÃO: Métodos para gerenciar relacionamento bidirecional
+    public void addPayment(PaymentModel payment) {
+        payments.add(payment);
+        payment.setPayer(this);
+    }
+
+    public void removePayment(PaymentModel payment) {
+        payments.remove(payment);
+        payment.setPayer(null);
+    }
+    
+    public void clearPayments() {
+        payments.clear();
+    }
 }

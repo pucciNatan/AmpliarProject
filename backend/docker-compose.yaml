@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:15-alpine
     container_name: ampliar_postgres
     restart: always
     environment:
@@ -12,20 +12,35 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
+    # ✅ HEALTHCHECK ADICIONADO
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ampliardb -d ampliar_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   springboot-app:
     build: .
     container_name: ampliar_api
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_healthy  # ✅ Aguarda healthcheck
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ampliar_db
       SPRING_DATASOURCE_USERNAME: ampliardb
       SPRING_DATASOURCE_PASSWORD: ampliardb
+      JWT_SECRET: minhaChaveSecretaSuperSegura123!
+    # ✅ HEALTHCHECK para Spring Boot
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:
