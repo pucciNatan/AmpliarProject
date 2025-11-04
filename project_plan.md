@@ -2,7 +2,7 @@
 
 ## *1. Objetivo do Projeto*
 
-Digitalizar e otimizar o processo de *agendamento de consultas, **controle de pacientes* e *gestão financeira* de clínicas psicológicas, com foco inicial na clínica *Ampliar*.
+Digitalizar e otimizar o processo de *agendamento de consultas,* *controle de pacientes* e *gestão financeira* de clínicas psicológicas, com foco inicial na clínica *Ampliar*.
 O projeto visa aumentar a *eficiência operacional, melhorar o **controle administrativo* e reduzir erros manuais por meio da implementação de um *sistema web integrado* (frontend e backend).
 
 
