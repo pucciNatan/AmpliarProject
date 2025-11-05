@@ -291,7 +291,8 @@ export function Appointments() {
         await appointmentController.updateAppointment(editingAppointment.id, updatePayload)
       }
 
-      await refreshAppointments()
+      // CORREÇÃO: Chamando a função correta
+      await loadAppointments(true) // Força a busca de novos dados
       closeAppointmentDialog()
     } catch (err) {
       console.error("Erro ao salvar agendamento", err)
@@ -312,7 +313,8 @@ export function Appointments() {
     setIsDeleting(true)
     try {
       await appointmentController.deleteAppointment(appointmentToDelete.id)
-      await refreshAppointments()
+      // CORREÇÃO: Chamando a função correta
+      await loadAppointments(true) // Força a busca de novos dados
       setAppointmentToDelete(null)
       setIsDeleteDialogOpen(false)
     } catch (err) {
@@ -531,7 +533,7 @@ export function Appointments() {
         currentDate={currentDate}
         onDateSelect={(date) => {
           setSelectedDate(date)
-          setCurrentDate(new Date(date))
+          setCurrentDate(new Date(date + "T12:00:00")); // Adiciona T12:00:00 para evitar problemas de fuso
         }}
         onNewAppointment={openCreateDialog}
       />
@@ -627,7 +629,7 @@ export function Appointments() {
                 <>
                   {" "}
                   de <strong>{appointmentToDelete.primaryPatientName ?? "Paciente"}</strong> em {" "}
-                  <strong>{new Date(`${appointmentToDelete.date}T00:00:00`).toLocaleDateString("pt-BR")}</strong>
+                  <strong>{new Date(`${appointmentToDelete.date}T12:00:00`).toLocaleDateString("pt-BR")}</strong>
                   {appointmentToDelete.time ? ` às ${appointmentToDelete.time}` : ""}?
                 </>
               ) : (

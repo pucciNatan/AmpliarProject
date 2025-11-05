@@ -19,7 +19,7 @@ export function Settings() {
   const settingsController = useMemo(() => SettingsController.getInstance(), [])
   const authController = useMemo(() => AuthController.getInstance(), [])
   const authState = authController.getAuthState()
-  const psychologistId = authState.user?.id ?? null
+  const psychologistId = authState.user?.id ?? null // Usado para verificar se está logado
 
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -37,7 +37,8 @@ export function Settings() {
       setIsLoading(true)
       setError(null)
       try {
-        const data = await settingsController.getSettings(psychologistId)
+        // CORREÇÃO: Chamada da API sem ID
+        const data = await settingsController.getSettings()
         setSettings(data)
         if (data.preferredTheme !== theme) {
           setTheme(data.preferredTheme)
@@ -50,6 +51,7 @@ export function Settings() {
     }
 
     load().catch(() => undefined)
+    // psychologistId é mantido como dependência para re-executar ao logar/deslogar
   }, [psychologistId, settingsController, setTheme, theme])
 
   const handleSave = async () => {
@@ -60,7 +62,8 @@ export function Settings() {
     setSuccessMessage(null)
 
     try {
-      const updated = await settingsController.updateSettings(psychologistId, settings)
+      // CORREÇÃO: Chamada da API sem ID, passando apenas o payload
+      const updated = await settingsController.updateSettings(settings)
       setSettings(updated)
       if (updated.preferredTheme !== theme) {
         setTheme(updated.preferredTheme)

@@ -40,14 +40,16 @@ export class SettingsController {
     return SettingsController.instance
   }
 
-  async getSettings(psychologistId: string): Promise<UserSettings> {
-    const response = (await api(`/settings/${psychologistId}`, { method: "GET" })) as UserSettingsDTO
+  async getSettings(): Promise<UserSettings> {
+    // CORREÇÃO: Removido o ID da URL
+    const response = (await api(`/settings`, { method: "GET" })) as UserSettingsDTO
     return mapDtoToSettings(response)
   }
 
-  async updateSettings(psychologistId: string, payload: UserSettingsUpdate): Promise<UserSettings> {
+  async updateSettings(payload: UserSettingsUpdate): Promise<UserSettings> {
+    // CORREÇÃO: Removido o ID da URL e o parâmetro psychologistId
     const body: Record<string, unknown> = { ...payload }
-    const response = (await api(`/settings/${psychologistId}`, {
+    const response = (await api(`/settings`, {
       method: "PUT",
       body,
     })) as UserSettingsDTO
