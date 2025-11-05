@@ -105,7 +105,8 @@ export class AuthController {
       email: data.email,
       password: data.password,
       cpf: data.cpf,
-      phoneNumber: data.phone,
+      phoneNumber: data.phone.replace(/\D/g, ""),
+      crp: data.crp,
     };
 
     try {
@@ -154,16 +155,56 @@ export class AuthController {
     }
   }
 
-  async forgotPassword(email: string): Promise<{ success: boolean; error?: string }> {
+  async forgotPassword(email: string): Promise<{ success: boolean; error?: string; token?: string }> {
     this.authState.isLoading = true
     this.authState.error = null
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.authState.isLoading = false
-        resolve({ success: true })
-      }, 1500)
-    })
+    try {
+      const response = await fetch("http://localhost:8080/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await response.json()
+
+      this.authState.isLoading = false
+
+      if (response.ok) {
+        return { success: true, token: data.token }
+      }
+
+      const errorMessage = data.error || "Erro ao solicitar redefinição de senha"
+      return { success: false, error: errorMessage }
+    } catch (error) {
+      console.error("Erro ao solicitar redefinição de senha:", error)
+      this.authState.isLoading = false
+      return {
+        success: false,
+        error: "Não foi possível conectar ao servidor. Tente novamente.",
+      }
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch("http://localhost:8080/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+      })
+
+      if (response.ok) {
+        return { success: true }
+      }
+
+      const data = await response.json().catch(() => ({}))
+      const errorMessage = data.error || "Erro ao redefinir senha"
+      return { success: false, error: errorMessage }
+    } catch (error) {
+      console.error("Erro ao redefinir senha:", error)
+      return { success: false, error: "Não foi possível conectar ao servidor" }
+    }
   }
 
   logout(): void {

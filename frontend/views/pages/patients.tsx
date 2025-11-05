@@ -12,24 +12,40 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Plus, Edit, Eye, Phone, Mail, CalendarIcon } from "lucide-react"
+import { Search, Plus, Edit, Eye, Phone, Mail, CalendarIcon, Trash2 } from "lucide-react"
 import type { Patient } from "@/models/patient"
 import { PatientController } from "@/controllers/patient-controller"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function Patients() {
   const [patients, setPatients] = useState<Patient[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
 
-  const [isNewPatientOpen, setIsNewPatientOpen] = useState(false)
+  const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create")
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
-  const [newPatientData, setNewPatientData] = useState({
+  const [formState, setFormState] = useState({
     fullName: "",
     cpf: "",
     phoneNumber: "",
@@ -55,21 +71,36 @@ export function Patients() {
     fetchPatients()
   }, [])
 
-  const handleCreatePatient = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      setError(null)
-      const newPatient = await patientController.createPatient(newPatientData)
-      setPatients((prev) => [newPatient, ...prev])
-      setIsNewPatientOpen(false)
-      setNewPatientData({ fullName: "", cpf: "", phoneNumber: "", birthDate: "" })
-    } catch (err: any) {
-      setError(err.message || "Erro ao criar paciente.")
-    }
+  const resetForm = () => {
+    setFormState({ fullName: "", cpf: "", phoneNumber: "", birthDate: "" })
+    setFormError(null)
+    setFormError(null)
+    setIsSubmitting(false)
+    setEditingPatient(null)
   }
 
-  const handleInputChange = (field: keyof typeof newPatientData, value: string) => {
-    setNewPatientData((prev) => ({ ...prev, [field]: value }))
+  const openCreateDialog = () => {
+    setDialogMode("create")
+    resetForm()
+    setIsPatientDialogOpen(true)
+  }
+
+  const openEditDialog = (patient: Patient) => {
+    setDialogMode("edit")
+    setEditingPatient(patient)
+    setFormState({
+      fullName: patient.name,
+      cpf: patient.cpf,
+      phoneNumber: patient.phone,
+      birthDate: patient.birthDate.slice(0, 10),
+    })
+    setFormError(null)
+    setIsSubmitting(false)
+    setIsPatientDialogOpen(true)
+  }
+
+  const handleInputChange = (field: keyof typeof formState, value: string) => {
+    setFormState((prev) => ({ ...prev, [field]: value }))
   }
 
   const filteredPatients = patients.filter(
@@ -103,23 +134,58 @@ export function Patients() {
           <p className="text-gray-600 dark:text-gray-400">Gerencie seus pacientes</p>
         </div>
 
-        <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Paciente
-            </Button>
-          </DialogTrigger>
+        <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" onClick={openCreateDialog}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Paciente
+        </Button>
+        <Dialog
+          open={isPatientDialogOpen}
+          onOpenChange={(open) => {
+            if (open) {
+              setIsPatientDialogOpen(true)
+            } else {
+              setIsPatientDialogOpen(false)
+              resetForm()
+            }
+          }}
+        >
           <DialogContent className="max-w-2xl">
-            <form onSubmit={handleCreatePatient}>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setFormError(null)
+                setIsSubmitting(true)
+                try {
+                  if (dialogMode === "create") {
+                    await patientController.createPatient(formState)
+                  } else if (editingPatient) {
+                    await patientController.updatePatient(editingPatient.id, formState)
+                  }
+
+                  await fetchPatients()
+                  setIsPatientDialogOpen(false)
+                  resetForm()
+                } catch (err: any) {
+                  setFormError(err.message || "Erro ao salvar paciente.")
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
+            >
               <DialogHeader>
-                <DialogTitle>Cadastrar Novo Paciente</DialogTitle>
-                <DialogDescription>Preencha os dados do paciente</DialogDescription>
+                <DialogTitle>
+                  {dialogMode === "create" ? "Cadastrar Novo Paciente" : "Editar Paciente"}
+                </DialogTitle>
+                <DialogDescription>
+                  {dialogMode === "create"
+                    ? "Preencha os dados do paciente"
+                    : "Atualize as informações do paciente"}
+                </DialogDescription>
               </DialogHeader>
 
-              {error && (
+              {formError && (
                 <Alert variant="destructive" className="my-4">
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>{formError}</AlertDescription>
                 </Alert>
               )}
 
@@ -129,7 +195,7 @@ export function Patients() {
                   <Input
                     id="name"
                     placeholder="Nome do paciente"
-                    value={newPatientData.fullName}
+                    value={formState.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
                     required
                   />
@@ -139,7 +205,7 @@ export function Patients() {
                   <Input
                     id="cpf"
                     placeholder="000.000.000-00"
-                    value={newPatientData.cpf}
+                    value={formState.cpf}
                     onChange={(e) => handleInputChange("cpf", e.target.value)}
                     required
                   />
@@ -149,7 +215,7 @@ export function Patients() {
                   <Input
                     id="phone"
                     placeholder="(00) 00000-0000"
-                    value={newPatientData.phoneNumber}
+                    value={formState.phoneNumber}
                     onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                     required
                   />
@@ -159,24 +225,42 @@ export function Patients() {
                   <Input
                     id="birthDate"
                     type="date"
-                    value={newPatientData.birthDate}
+                    value={formState.birthDate}
                     onChange={(e) => handleInputChange("birthDate", e.target.value)}
                     required
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsNewPatientOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsPatientDialogOpen(false)
+                    resetForm()
+                  }}
+                  disabled={isSubmitting}
+                >
                   Cancelar
                 </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-                  Cadastrar
+                <Button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Salvando..." : dialogMode === "create" ? "Cadastrar" : "Salvar"}
                 </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardContent className="pt-6">
@@ -245,8 +329,18 @@ export function Patients() {
                         <Button variant="ghost" size="sm" onClick={() => setSelectedPatient(patient)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(patient)}>
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setPatientToDelete(patient)
+                            setIsDeleteDialogOpen(true)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -305,6 +399,58 @@ export function Patients() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteDialogOpen(false)
+            setPatientToDelete(null)
+          } else {
+            setIsDeleteDialogOpen(true)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover o paciente
+              {patientToDelete ? (
+                <>
+                  {" "}
+                  <strong>{patientToDelete.name}</strong>?
+                </>
+              ) : (
+                " selecionado?"
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+              onClick={async () => {
+                if (!patientToDelete) return
+                setIsDeleting(true)
+                try {
+                  await patientController.deletePatient(patientToDelete.id)
+                  await fetchPatients()
+                  setPatientToDelete(null)
+                  setIsDeleteDialogOpen(false)
+                } catch (err: any) {
+                  setError(err.message || "Erro ao excluir paciente.")
+                } finally {
+                  setIsDeleting(false)
+                }
+              }}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

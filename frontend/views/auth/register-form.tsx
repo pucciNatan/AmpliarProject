@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Brain, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { AuthController } from "@/controllers/auth-controller"
-import type { AuthMode } from "./auth-view"
+import type { AuthModeChangeHandler } from "./auth-view"
 import type { RegisterData } from "@/models/auth"
 
 interface RegisterFormProps {
   onLogin: () => void
-  onModeChange: (mode: AuthMode) => void
+  onModeChange: AuthModeChangeHandler
 }
 
 export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
@@ -36,7 +36,7 @@ export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
 
   const validateForm = () => {
     const newErrors: Partial<RegisterData> = {}
-    const phoneRegex = /^\d{10,11}$/ 
+    const phoneRegex = /^\d{10,11}$/
 
     if (!formData.name.trim()) {
       newErrors.name = "Nome é obrigatório"

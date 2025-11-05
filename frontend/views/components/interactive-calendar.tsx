@@ -1,68 +1,97 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-import { AppointmentController } from "@/controllers/appointment-controller"
 import { cn } from "@/lib/utils"
 import type { Appointment } from "@/models/appointment"
 
+const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+const monthNames = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+]
+
+const statusConfig: Record<Appointment["status"], { label: string; className: string }> = {
+  scheduled: { label: "Agendado", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
+  completed: { label: "Concluído", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
+  cancelled: { label: "Cancelado", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
+  "no-show": {
+    label: "Faltou",
+    className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  },
+}
+
+const getStatusBadge = (status: Appointment["status"]) => {
+  const config = statusConfig[status]
+  return <Badge className={`${config.className} text-xs`}>{config.label}</Badge>
+}
+
 interface InteractiveCalendarProps {
   currentDate: Date
+  appointments: Appointment[]
   onDateSelect: (date: string) => void
   onNewAppointment: () => void
 }
 
-export function InteractiveCalendar({ currentDate, onDateSelect, onNewAppointment }: InteractiveCalendarProps) {
+export function InteractiveCalendar({ appointments, currentDate, onDateSelect, onNewAppointment }: InteractiveCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showDayModal, setShowDayModal] = useState(false)
   const [modalAppointments, setModalAppointments] = useState<Appointment[]>([])
 
-  const appointmentController = AppointmentController.getInstance()
-  const calendarMonth = appointmentController.getCalendarMonth(currentDate.getFullYear(), currentDate.getMonth())
+  const calendarMonth = useMemo(() => {
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const startDate = new Date(firstDay)
+    startDate.setDate(startDate.getDate() - firstDay.getDay())
 
-  const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
-  const monthNames = [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
-  ]
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const days = Array.from({ length: 42 }, (_, index) => {
+      const current = new Date(startDate)
+      current.setDate(startDate.getDate() + index)
+      const dateString = current.toISOString().split("T")[0]
+      const dayAppointments = appointments.filter((appointment) => appointment.date === dateString)
+
+      return {
+        date: new Date(current),
+        appointments: dayAppointments,
+        isCurrentMonth: current.getMonth() === month,
+        isToday: current.getTime() === today.getTime(),
+        isSelected: selectedDate === dateString,
+      }
+    })
+
+    return {
+      year,
+      month,
+      days,
+    }
+  }, [appointments, currentDate, selectedDate])
 
   const handleDateClick = (date: Date) => {
     const dateString = date.toISOString().split("T")[0]
-    const dayAppointments = appointmentController.getAppointmentsByDate(dateString)
+    const dayAppointments = appointments.filter((appointment) => appointment.date === dateString)
 
     setSelectedDate(dateString)
     setModalAppointments(dayAppointments)
     setShowDayModal(true)
     onDateSelect(dateString)
-  }
-
-  const getStatusBadge = (status: Appointment["status"]) => {
-    const statusConfig = {
-      scheduled: { label: "Agendado", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-      completed: { label: "Concluído", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
-      cancelled: { label: "Cancelado", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
-      "no-show": {
-        label: "Faltou",
-        className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      },
-    }
-
-    const config = statusConfig[status]
-    return <Badge className={`${config.className} text-xs`}>{config.label}</Badge>
   }
 
   const navigateMonth = (direction: "prev" | "next") => {
@@ -135,7 +164,7 @@ export function InteractiveCalendar({ currentDate, onDateSelect, onNewAppointmen
                             <div
                               key={appointment.id}
                               className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400"
-                              title={`${appointment.time} - ${appointment.patientName}`}
+                              title={`${appointment.time ?? "--:--"} - ${appointment.primaryPatientName ?? "Paciente"}`}
                             />
                           ))}
                           {day.appointments.length > 2 && (
@@ -195,11 +224,15 @@ export function InteractiveCalendar({ currentDate, onDateSelect, onNewAppointmen
                   >
                     <div className="flex items-center gap-4">
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">{appointment.time}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{appointment.endTime}</div>
+                        <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                          {appointment.time ?? "--:--"}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{appointment.endTime ?? "--:--"}</div>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {appointment.primaryPatientName ?? "Paciente"}
+                        </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</p>
                         {appointment.notes && (
                           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{appointment.notes}</p>

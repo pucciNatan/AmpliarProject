@@ -10,11 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Brain, Eye, EyeOff } from "lucide-react"
 import { AuthController } from "@/controllers/auth-controller"
-import type { AuthMode } from "./auth-view"
+import type { AuthModeChangeHandler } from "./auth-view"
 
 interface LoginFormProps {
   onLogin: () => void
-  onModeChange: (mode: AuthMode) => void
+  onModeChange: AuthModeChangeHandler
 }
 
 export function LoginForm({ onLogin, onModeChange }: LoginFormProps) {

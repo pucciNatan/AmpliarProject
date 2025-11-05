@@ -8,6 +8,7 @@ import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.model.PatientModel;
 import com.example.ampliar.model.PaymentModel;
 import com.example.ampliar.model.PsychologistModel;
+import com.example.ampliar.model.enums.AppointmentStatus;
 import com.example.ampliar.repository.AppointmentRepository;
 import com.example.ampliar.repository.PatientRepository;
 import com.example.ampliar.repository.PaymentRepository;
@@ -36,7 +37,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentDTO createAppointment(AppointmentCreateDTO dto) {
         log.info("Criando agendamento para psicólogo ID: {}", dto.psychologistId());
-        
+
         try {
             PsychologistModel psych = psychologistRepository.findById(dto.psychologistId())
                     .orElseThrow(() -> {
@@ -46,7 +47,7 @@ public class AppointmentService {
 
             List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
             if (patients.size() != dto.patientIds().size()) {
-                log.error("Pacientes não encontrados. Esperados: {}, Encontrados: {}", 
+                log.error("Pacientes não encontrados. Esperados: {}, Encontrados: {}",
                          dto.patientIds().size(), patients.size());
                 throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
             }
@@ -71,6 +72,10 @@ public class AppointmentService {
 
             AppointmentModel model = new AppointmentModel();
             model.setAppointmentDate(dto.appointmentDate());
+            model.setAppointmentEndDate(dto.appointmentEndDate());
+            model.setAppointmentType(dto.type().trim());
+            model.setNotes(normalizeNotes(dto.notes()));
+            model.setStatus(dto.status() != null ? dto.status() : AppointmentStatus.SCHEDULED);
             model.setPsychologist(psych);
             model.setPatients(patients);
             model.setPayment(payment);
@@ -78,7 +83,7 @@ public class AppointmentService {
             model = appointmentRepository.save(model);
             log.info("Agendamento criado com sucesso ID: {}", model.getId());
             return mapper.apply(model);
-            
+
         } catch (EntityNotFoundException e) {
             log.error("Erro ao criar agendamento - recurso não encontrado: {}", e.getMessage());
             throw e;
@@ -94,7 +99,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentDTO updateAppointment(Long id, AppointmentUpdateDTO dto) {
         log.info("Atualizando agendamento ID: {}", id);
-        
+
         try {
             AppointmentModel model = appointmentRepository.findById(id)
                     .orElseThrow(() -> {
@@ -111,6 +116,26 @@ public class AppointmentService {
                 log.debug("Data do agendamento atualizada");
             }
 
+            if (dto.appointmentEndDate() != null) {
+                model.setAppointmentEndDate(dto.appointmentEndDate());
+                log.debug("Término do agendamento atualizado");
+            }
+
+            if (dto.type() != null) {
+                model.setAppointmentType(dto.type().trim());
+                log.debug("Tipo do agendamento atualizado");
+            }
+
+            if (dto.notes() != null) {
+                model.setNotes(normalizeNotes(dto.notes()));
+                log.debug("Observações do agendamento atualizadas");
+            }
+
+            if (dto.status() != null) {
+                model.setStatus(dto.status());
+                log.debug("Status do agendamento atualizado");
+            }
+
             if (dto.psychologistId() != null && !dto.psychologistId().equals(model.getPsychologist().getId())) {
                 PsychologistModel psych = psychologistRepository.findById(dto.psychologistId())
                         .orElseThrow(() -> {
@@ -125,7 +150,7 @@ public class AppointmentService {
             if (dto.patientIds() != null && !dto.patientIds().isEmpty()) {
                 List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
                 if (patients.size() != dto.patientIds().size()) {
-                    log.error("Pacientes não encontrados na atualização. Esperados: {}, Encontrados: {}", 
+                    log.error("Pacientes não encontrados na atualização. Esperados: {}, Encontrados: {}",
                              dto.patientIds().size(), patients.size());
                     throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
                 }
@@ -154,7 +179,7 @@ public class AppointmentService {
             model = appointmentRepository.save(model);
             log.info("Agendamento atualizado com sucesso ID: {}", id);
             return mapper.apply(model);
-            
+
         } catch (Exception e) {
             log.error("Erro ao atualizar agendamento ID: {}", id, e);
             throw e;
@@ -228,5 +253,13 @@ public class AppointmentService {
             log.warn("Conflito de horário para paciente ID: {} na data: {}", patientId, date);
             throw new IllegalStateException("O paciente já tem um agendamento nesse horário");
         }
+    }
+
+    private String normalizeNotes(String notes) {
+        if (notes == null) {
+            return null;
+        }
+        String trimmed = notes.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

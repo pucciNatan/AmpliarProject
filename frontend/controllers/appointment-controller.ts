@@ -1,138 +1,246 @@
-import type { Appointment, CalendarMonth, CalendarDay } from "@/models/appointment"
+import { api } from "@/lib/api-client"
+import type {
+  Appointment,
+  AppointmentStatus,
+  BackendAppointmentStatus,
+  CreateAppointmentPayload,
+  UpdateAppointmentPayload,
+} from "@/models/appointment"
+
+interface AppointmentPatientDTO {
+  id: number
+  fullName: string
+}
+
+interface AppointmentPsychologistDTO {
+  id: number
+  fullName: string
+}
+
+interface AppointmentDTO {
+  id: number
+  appointmentDate: string
+  appointmentEndDate: string | null
+  status: BackendAppointmentStatus
+  type: string
+  notes?: string | null
+  psychologist?: AppointmentPsychologistDTO | null
+  patients: AppointmentPatientDTO[]
+  paymentStatus: "paid" | "pending" | "overdue"
+  paymentAmount: number | string | null
+  paymentId?: number | null
+}
+
+const backendToUiStatusMap: Record<BackendAppointmentStatus, AppointmentStatus> = {
+  SCHEDULED: "scheduled",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+  NO_SHOW: "no-show",
+}
+
+const uiToBackendStatusMap: Record<AppointmentStatus, BackendAppointmentStatus> = {
+  scheduled: "SCHEDULED",
+  completed: "COMPLETED",
+  cancelled: "CANCELLED",
+  "no-show": "NO_SHOW",
+}
+
+const ensureBackendStatus = (status?: BackendAppointmentStatus): BackendAppointmentStatus => {
+  if (!status) return "SCHEDULED"
+  return status
+}
+
+const toBackendStatus = (status?: AppointmentStatus): BackendAppointmentStatus | undefined => {
+  if (!status) return undefined
+  return uiToBackendStatusMap[status]
+}
+
+const extractDate = (value?: string | null): string => {
+  if (!value) return ""
+  const [datePart] = value.split("T")
+  return datePart ?? ""
+}
+
+const extractTime = (value?: string | null): string | null => {
+  if (!value) return null
+  const [, timePart] = value.split("T")
+  if (!timePart) return null
+  return timePart.substring(0, 5)
+}
+
+const normalizeAmount = (value: number | string | null): number => {
+  if (value === null || value === undefined) return 0
+  if (typeof value === "number") return value
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+const mapDtoToAppointment = (dto: AppointmentDTO): Appointment => {
+  const backendStatus = ensureBackendStatus(dto.status)
+
+  const patients = dto.patients?.map((patient) => ({
+    id: patient.id.toString(),
+    fullName: patient.fullName,
+  })) ?? []
+
+  const psychologist = dto.psychologist
+    ? {
+        id: dto.psychologist.id.toString(),
+        fullName: dto.psychologist.fullName,
+      }
+    : null
+
+  return {
+    id: dto.id.toString(),
+    appointmentDate: dto.appointmentDate,
+    appointmentEndDate: dto.appointmentEndDate ?? null,
+    date: extractDate(dto.appointmentDate),
+    time: extractTime(dto.appointmentDate),
+    endTime: extractTime(dto.appointmentEndDate),
+    type: dto.type,
+    status: backendToUiStatusMap[backendStatus],
+    backendStatus,
+    notes: dto.notes ?? null,
+    patients,
+    primaryPatientName: patients[0]?.fullName ?? null,
+    psychologist,
+    paymentStatus: (dto.paymentStatus ?? "pending") as Appointment["paymentStatus"],
+    paymentAmount: normalizeAmount(dto.paymentAmount),
+    paymentId: dto.paymentId != null ? dto.paymentId.toString() : null,
+  }
+}
 
 export class AppointmentController {
   private static instance: AppointmentController
-  private appointments: Appointment[] = [
-    {
-      id: "1",
-      patientId: "1",
-      patientName: "Ana Carolina Santos",
-      psychologistId: "1",
-      psychologist: "Dra. Maria Silva",
-      date: "2024-01-20",
-      time: "09:00",
-      endTime: "10:00",
-      type: "Consulta Individual",
-      status: "scheduled",
-      notes: "Primeira consulta",
-      paymentStatus: "paid",
-      amount: 150,
-    },
-    {
-      id: "2",
-      patientId: "2",
-      patientName: "João Pedro Silva",
-      psychologistId: "1",
-      psychologist: "Dra. Maria Silva",
-      date: "2024-01-20",
-      time: "10:30",
-      endTime: "11:30",
-      type: "Terapia Cognitiva",
-      status: "scheduled",
-      paymentStatus: "pending",
-      amount: 150,
-    },
-    {
-      id: "3",
-      patientId: "3",
-      patientName: "Maria Fernanda Costa",
-      psychologistId: "1",
-      psychologist: "Dra. Maria Silva",
-      date: "2024-01-22",
-      time: "14:00",
-      endTime: "15:00",
-      type: "Avaliação Inicial",
-      status: "completed",
-      paymentStatus: "paid",
-      amount: 200,
-    },
-    {
-      id: "4",
-      patientId: "4",
-      patientName: "Carlos Eduardo Lima",
-      psychologistId: "1",
-      psychologist: "Dra. Maria Silva",
-      date: "2024-01-25",
-      time: "15:30",
-      endTime: "16:30",
-      type: "Consulta Individual",
-      status: "scheduled",
-      paymentStatus: "overdue",
-      amount: 150,
-    },
-  ]
+  private cache: Appointment[] = []
+  private loaded = false
+  private loadingPromise: Promise<Appointment[]> | null = null
 
   static getInstance(): AppointmentController {
     if (!AppointmentController.instance) {
       AppointmentController.instance = new AppointmentController()
     }
+
     return AppointmentController.instance
   }
 
-  getAppointments(): Appointment[] {
-    return [...this.appointments]
+  private sortAppointments(appointments: Appointment[]): Appointment[] {
+    return appointments.sort((a, b) => a.appointmentDate.localeCompare(b.appointmentDate))
   }
 
-  getAppointmentsByDate(date: string): Appointment[] {
-    return this.appointments.filter((appointment) => appointment.date === date)
-  }
-
-  getCalendarMonth(year: number, month: number): CalendarMonth {
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const startDate = new Date(firstDay)
-    startDate.setDate(startDate.getDate() - firstDay.getDay())
-
-    const days: CalendarDay[] = []
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    for (let i = 0; i < 42; i++) {
-      const currentDate = new Date(startDate)
-      currentDate.setDate(startDate.getDate() + i)
-
-      const dateString = currentDate.toISOString().split("T")[0]
-      const dayAppointments = this.getAppointmentsByDate(dateString)
-
-      days.push({
-        date: new Date(currentDate),
-        appointments: dayAppointments,
-        isCurrentMonth: currentDate.getMonth() === month,
-        isToday: currentDate.getTime() === today.getTime(),
-        isSelected: false,
-      })
+  private async loadAppointments(force = false): Promise<Appointment[]> {
+    if (this.loaded && !force) {
+      return this.cache
     }
 
-    return {
-      year,
-      month,
-      days,
+    if (this.loadingPromise && !force) {
+      return this.loadingPromise
+    }
+
+    this.loadingPromise = (async () => {
+      const response = (await api("/appointments", { method: "GET" })) as AppointmentDTO[]
+      this.cache = this.sortAppointments(response.map(mapDtoToAppointment))
+      this.loaded = true
+      return this.cache
+    })()
+
+    try {
+      return await this.loadingPromise
+    } finally {
+      this.loadingPromise = null
     }
   }
 
-  async createAppointment(appointment: Omit<Appointment, "id">): Promise<Appointment> {
-    const newAppointment: Appointment = {
-      ...appointment,
-      id: Date.now().toString(),
+  async getAppointments(options: { force?: boolean } = {}): Promise<Appointment[]> {
+    return this.loadAppointments(!!options.force)
+  }
+
+  async getAppointmentById(id: string): Promise<Appointment> {
+    const response = (await api(`/appointments/${id}`, { method: "GET" })) as AppointmentDTO
+    return mapDtoToAppointment(response)
+  }
+
+  async getAppointmentsByDate(date: string): Promise<Appointment[]> {
+    const appointments = await this.getAppointments()
+    return appointments.filter((appointment) => appointment.date === date)
+  }
+
+  async createAppointment(payload: CreateAppointmentPayload): Promise<Appointment> {
+    const body = {
+      appointmentDate: payload.appointmentDate,
+      appointmentEndDate: payload.appointmentEndDate ?? null,
+      status: toBackendStatus(payload.status) ?? "SCHEDULED",
+      type: payload.type,
+      notes: payload.notes ?? null,
+      psychologistId: Number(payload.psychologistId),
+      patientIds: payload.patientIds.map((value) => Number(value)),
+      paymentId:
+        payload.paymentId === null || payload.paymentId === undefined ? null : Number(payload.paymentId),
     }
 
-    this.appointments.push(newAppointment)
-    return newAppointment
+    const created = (await api("/appointments", {
+      method: "POST",
+      body,
+    })) as AppointmentDTO
+
+    const mapped = mapDtoToAppointment(created)
+    this.cache = this.sortAppointments([...this.cache, mapped])
+    return mapped
   }
 
-  async updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment | null> {
-    const index = this.appointments.findIndex((apt) => apt.id === id)
-    if (index === -1) return null
+  async updateAppointment(id: string, payload: UpdateAppointmentPayload): Promise<Appointment> {
+    const body: Record<string, unknown> = {}
 
-    this.appointments[index] = { ...this.appointments[index], ...updates }
-    return this.appointments[index]
+    if (payload.appointmentDate !== undefined) {
+      body.appointmentDate = payload.appointmentDate
+    }
+
+    if (payload.appointmentEndDate !== undefined) {
+      body.appointmentEndDate = payload.appointmentEndDate
+    }
+
+    const backendStatus = toBackendStatus(payload.status)
+    if (backendStatus) {
+      body.status = backendStatus
+    }
+
+    if (payload.type !== undefined) {
+      body.type = payload.type
+    }
+
+    if (payload.notes !== undefined) {
+      body.notes = payload.notes ?? null
+    }
+
+    if (payload.psychologistId !== undefined) {
+      body.psychologistId = Number(payload.psychologistId)
+    }
+
+    if (payload.patientIds !== undefined) {
+      body.patientIds = payload.patientIds.map((value) => Number(value))
+    }
+
+    if (payload.paymentId !== undefined) {
+      body.paymentId = payload.paymentId === null ? null : Number(payload.paymentId)
+    }
+
+    const updated = (await api(`/appointments/${id}`, {
+      method: "PUT",
+      body,
+    })) as AppointmentDTO
+
+    const mapped = mapDtoToAppointment(updated)
+    this.cache = this.sortAppointments(this.cache.map((appointment) => (appointment.id === id ? mapped : appointment)))
+    return mapped
   }
 
-  async deleteAppointment(id: string): Promise<boolean> {
-    const index = this.appointments.findIndex((apt) => apt.id === id)
-    if (index === -1) return false
+  async deleteAppointment(id: string): Promise<void> {
+    await api(`/appointments/${id}`, { method: "DELETE" })
+    this.cache = this.cache.filter((appointment) => appointment.id !== id)
+  }
 
-    this.appointments.splice(index, 1)
-    return true
+  clearCache(): void {
+    this.cache = []
+    this.loaded = false
   }
 }

@@ -1,5 +1,7 @@
 package com.example.ampliar.dto.psychologist;
 
+import java.util.List;
+
 import org.hibernate.validator.constraints.br.CPF;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
@@ -22,5 +24,17 @@ public record PsychologistUpdateDTO(
         String email,
 
         @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
-        String password
+        String password,
+
+        @Size(max = 30, message = "O CRP deve ter no máximo 30 caracteres")
+        String crp,
+
+        @Size(max = 255, message = "O endereço deve ter no máximo 255 caracteres")
+        String address,
+
+        String bio,
+
+        List<String> specialties,
+
+        List<PsychologistWorkingHourDTO> workingHours
 ) {}

@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Brain, ArrowLeft, CheckCircle } from "lucide-react"
 import { AuthController } from "@/controllers/auth-controller"
-import type { AuthMode } from "./auth-view"
+import type { AuthModeChangeHandler } from "./auth-view"
 
 interface ForgotPasswordFormProps {
-  onModeChange: (mode: AuthMode) => void
+  onModeChange: AuthModeChangeHandler
 }
 
 export function ForgotPasswordForm({ onModeChange }: ForgotPasswordFormProps) {
@@ -21,6 +21,7 @@ export function ForgotPasswordForm({ onModeChange }: ForgotPasswordFormProps) {
   const [errors, setErrors] = useState<{ email?: string }>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [resetToken, setResetToken] = useState<string | null>(null)
 
   const authController = AuthController.getInstance()
 
@@ -48,6 +49,7 @@ export function ForgotPasswordForm({ onModeChange }: ForgotPasswordFormProps) {
 
     if (result.success) {
       setIsSuccess(true)
+      setResetToken(result.token ?? null)
     } else {
       setErrors({ email: result.error })
     }
@@ -67,18 +69,33 @@ export function ForgotPasswordForm({ onModeChange }: ForgotPasswordFormProps) {
           <Alert className="mb-4 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
             <AlertDescription className="text-sm text-green-800 dark:text-green-200">
               Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+              {resetToken && (
+                <>
+                  <br />
+                  <span className="font-medium">Token gerado:</span> {resetToken}
+                </>
+              )}
             </AlertDescription>
           </Alert>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full bg-transparent"
-            onClick={() => onModeChange("login")}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Login
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full bg-transparent"
+              onClick={() => onModeChange("login")}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao Login
+            </Button>
+            <Button
+              type="button"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => onModeChange("reset-password", resetToken ?? undefined)}
+            >
+              Usar Token Agora
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )

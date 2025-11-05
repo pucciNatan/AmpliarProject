@@ -1,49 +1,108 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Bell, Shield, Palette, Database, Save } from "lucide-react"
 import { useTheme } from "@/providers/theme-provider"
+import { SettingsController } from "@/controllers/settings-controller"
+import { AuthController } from "@/controllers/auth-controller"
+import type { UserSettings } from "@/models/settings"
 
 export function Settings() {
   const { theme, setTheme } = useTheme()
-  const [settings, setSettings] = useState({
-    notifications: {
-      emailReminders: true,
-      smsReminders: false,
-      appointmentConfirmations: true,
-      paymentReminders: true,
-    },
-    appearance: {
-      theme: theme,
-      language: "pt-BR",
-    },
-    system: {
-      autoBackup: true,
-      sessionTimeout: "30",
-      defaultAppointmentDuration: "60",
-    },
-    security: {
-      twoFactorAuth: false,
-      passwordExpiry: "90",
-    },
-  })
+  const settingsController = useMemo(() => SettingsController.getInstance(), [])
+  const authController = useMemo(() => AuthController.getInstance(), [])
+  const authState = authController.getAuthState()
+  const psychologistId = authState.user?.id ?? null
 
-  const handleSave = () => {
-    // Update theme if changed
-    if (settings.appearance.theme !== theme) {
-      setTheme(settings.appearance.theme as "light" | "dark" | "system")
+  const [settings, setSettings] = useState<UserSettings | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      if (!psychologistId) {
+        setIsLoading(false)
+        setError("Faça login para gerenciar as configurações")
+        return
+      }
+      setIsLoading(true)
+      setError(null)
+      try {
+        const data = await settingsController.getSettings(psychologistId)
+        setSettings(data)
+        if (data.preferredTheme !== theme) {
+          setTheme(data.preferredTheme)
+        }
+      } catch (err: any) {
+        setError(err.message || "Não foi possível carregar as configurações")
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      alert("Configurações salvas com sucesso!")
-    }, 1000)
+    load().catch(() => undefined)
+  }, [psychologistId, settingsController, setTheme, theme])
+
+  const handleSave = async () => {
+    if (!psychologistId || !settings) return
+
+    setIsSaving(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const updated = await settingsController.updateSettings(psychologistId, settings)
+      setSettings(updated)
+      if (updated.preferredTheme !== theme) {
+        setTheme(updated.preferredTheme)
+      }
+      setSuccessMessage("Configurações salvas com sucesso")
+    } catch (err: any) {
+      setError(err.message || "Erro ao salvar configurações")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (!psychologistId) {
+    return (
+      <div className="space-y-6">
+        <Alert>
+          <AlertDescription>Você precisa estar autenticado para acessar as configurações.</AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+            Carregando configurações...
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>{error ?? "Não foi possível carregar as configurações."}</AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
@@ -52,11 +111,17 @@ export function Settings() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Configurações</h1>
           <p className="text-gray-600 dark:text-gray-400">Personalize o sistema conforme suas preferências</p>
+          {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {successMessage && <p className="mt-2 text-sm text-green-600 dark:text-green-400">{successMessage}</p>}
         </div>
 
-        <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+        <Button
+          onClick={handleSave}
+          className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          disabled={isSaving}
+        >
           <Save className="mr-2 h-4 w-4" />
-          Salvar Alterações
+          {isSaving ? "Salvando..." : "Salvar Alterações"}
         </Button>
       </div>
 
@@ -78,13 +143,14 @@ export function Settings() {
               </div>
               <Switch
                 id="email-reminders"
-                checked={settings.notifications.emailReminders}
-                onCheckedChange={(checked) =>
+                checked={settings.emailReminders}
+                onCheckedChange={(checked) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    notifications: { ...settings.notifications, emailReminders: checked },
+                    emailReminders: checked,
                   })
-                }
+                }}
               />
             </div>
 
@@ -95,13 +161,14 @@ export function Settings() {
               </div>
               <Switch
                 id="sms-reminders"
-                checked={settings.notifications.smsReminders}
-                onCheckedChange={(checked) =>
+                checked={settings.smsReminders}
+                onCheckedChange={(checked) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    notifications: { ...settings.notifications, smsReminders: checked },
+                    smsReminders: checked,
                   })
-                }
+                }}
               />
             </div>
 
@@ -112,13 +179,14 @@ export function Settings() {
               </div>
               <Switch
                 id="appointment-confirmations"
-                checked={settings.notifications.appointmentConfirmations}
-                onCheckedChange={(checked) =>
+                checked={settings.appointmentConfirmations}
+                onCheckedChange={(checked) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    notifications: { ...settings.notifications, appointmentConfirmations: checked },
+                    appointmentConfirmations: checked,
                   })
-                }
+                }}
               />
             </div>
 
@@ -129,13 +197,14 @@ export function Settings() {
               </div>
               <Switch
                 id="payment-reminders"
-                checked={settings.notifications.paymentReminders}
-                onCheckedChange={(checked) =>
+                checked={settings.paymentReminders}
+                onCheckedChange={(checked) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    notifications: { ...settings.notifications, paymentReminders: checked },
+                    paymentReminders: checked,
                   })
-                }
+                }}
               />
             </div>
           </CardContent>
@@ -154,13 +223,14 @@ export function Settings() {
             <div className="space-y-2">
               <Label htmlFor="theme">Tema</Label>
               <Select
-                value={settings.appearance.theme}
-                onValueChange={(value) =>
+                value={settings.preferredTheme}
+                onValueChange={(value) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    appearance: { ...settings.appearance, theme: value },
+                    preferredTheme: value as UserSettings["preferredTheme"],
                   })
-                }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -176,13 +246,14 @@ export function Settings() {
             <div className="space-y-2">
               <Label htmlFor="language">Idioma</Label>
               <Select
-                value={settings.appearance.language}
-                onValueChange={(value) =>
+                value={settings.language}
+                onValueChange={(value) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    appearance: { ...settings.appearance, language: value },
+                    language: value,
                   })
-                }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -214,13 +285,14 @@ export function Settings() {
               </div>
               <Switch
                 id="auto-backup"
-                checked={settings.system.autoBackup}
-                onCheckedChange={(checked) =>
+                checked={settings.autoBackup}
+                onCheckedChange={(checked) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    system: { ...settings.system, autoBackup: checked },
+                    autoBackup: checked,
                   })
-                }
+                }}
               />
             </div>
 
@@ -229,26 +301,28 @@ export function Settings() {
               <Input
                 id="session-timeout"
                 type="number"
-                value={settings.system.sessionTimeout}
-                onChange={(e) =>
+                value={settings.sessionTimeoutMinutes}
+                onChange={(e) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    system: { ...settings.system, sessionTimeout: e.target.value },
+                    sessionTimeoutMinutes: Number(e.target.value || "0"),
                   })
-                }
+                }}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="appointment-duration">Duração Padrão da Consulta (minutos)</Label>
               <Select
-                value={settings.system.defaultAppointmentDuration}
-                onValueChange={(value) =>
+                value={String(settings.defaultAppointmentDuration)}
+                onValueChange={(value) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    system: { ...settings.system, defaultAppointmentDuration: value },
+                    defaultAppointmentDuration: Number(value),
                   })
-                }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -281,26 +355,28 @@ export function Settings() {
               </div>
               <Switch
                 id="two-factor"
-                checked={settings.security.twoFactorAuth}
-                onCheckedChange={(checked) =>
+                checked={settings.twoFactorAuth}
+                onCheckedChange={(checked) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    security: { ...settings.security, twoFactorAuth: checked },
+                    twoFactorAuth: checked,
                   })
-                }
+                }}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password-expiry">Expiração da Senha (dias)</Label>
               <Select
-                value={settings.security.passwordExpiry}
-                onValueChange={(value) =>
+                value={settings.passwordExpiryDays === 0 ? "never" : String(settings.passwordExpiryDays)}
+                onValueChange={(value) => {
+                  setSuccessMessage(null)
                   setSettings({
                     ...settings,
-                    security: { ...settings.security, passwordExpiry: value },
+                    passwordExpiryDays: value === "never" ? 0 : Number(value),
                   })
-                }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
