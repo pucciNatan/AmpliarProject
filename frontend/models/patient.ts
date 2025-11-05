@@ -3,13 +3,13 @@ export interface Patient {
   name: string
   cpf: string
   phone: string
-  email: string // Campo Adicionado
+  email: string
   birthDate: string
   address?: string
   status: "active" | "inactive"
   lastAppointment?: string
   totalAppointments: number
-  responsibleId?: string
+  legalGuardianIds: string[]
   notes?: string
   createdAt: string
   updatedAt: string

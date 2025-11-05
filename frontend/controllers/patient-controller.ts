@@ -8,7 +8,7 @@ interface PatientDTO {
   fullName: string
   cpf: string
   phone: string
-  email: string // Este campo agora é válido
+  email: string | null // CORREÇÃO: Email pode vir nulo do backend
   birthDate: string
   address: string | null
   notes: string | null
@@ -23,18 +23,21 @@ const mapDtoToFrontend = (dto: PatientDTO): Patient => {
     name: dto.fullName,
     cpf: dto.cpf,
     phone: dto.phone,
-    email: dto.email, // Agora está correto
+    email: dto.email ?? "", // CORREÇÃO: Garantir que o valor seja "" se for nulo
     birthDate: dto.birthDate,
     address: dto.address ?? undefined,
     status: dto.status,
     lastAppointment: undefined,
     totalAppointments: dto.totalAppointments,
-    responsibleId: dto.legalGuardianIds?.length > 0 ? dto.legalGuardianIds[0].toString() : undefined,
+    legalGuardianIds: (dto.legalGuardianIds ?? []).map(String),
     notes: dto.notes ?? undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
 }
+
+export type PatientCreatePayload = Omit<Patient, "id" | "createdAt" | "updatedAt" | "status" | "totalAppointments" | "lastAppointment">
+export type PatientUpdatePayload = Partial<PatientCreatePayload>
 
 export class PatientController {
   private static instance: PatientController
@@ -76,16 +79,16 @@ export class PatientController {
     return this.loadPatients(!!options.force)
   }
 
-  async createPatient(data: Omit<Patient, "id" | "createdAt" | "updatedAt">): Promise<Patient> {
+  async createPatient(data: PatientCreatePayload): Promise<Patient> {
     const payload = {
       fullName: data.name,
       cpf: data.cpf,
       phoneNumber: data.phone,
       birthDate: data.birthDate,
-      email: data.email, // Agora está correto
-      address: data.address,
-      notes: data.notes,
-      legalGuardianIds: data.responsibleId ? [Number(data.responsibleId)] : [],
+      email: data.email || null, // Envia nulo se for string vazia
+      address: data.address || null, // Envia nulo se for string vazia
+      notes: data.notes || null, // Envia nulo se for string vazia
+      legalGuardianIds: (data.legalGuardianIds ?? []).map(Number),
     }
 
     const newPatientDto = (await api("/patients", {
@@ -98,16 +101,16 @@ export class PatientController {
     return newPatient
   }
 
-  async updatePatient(id: string, data: Partial<Omit<Patient, "id" | "createdAt" | "updatedAt">>): Promise<Patient> {
+  async updatePatient(id: string, data: PatientUpdatePayload): Promise<Patient> {
     const payload = {
       fullName: data.name,
       cpf: data.cpf,
       phoneNumber: data.phone,
       birthDate: data.birthDate,
-      email: data.email, // Agora está correto
-      address: data.address,
-      notes: data.notes,
-      legalGuardianIds: data.responsibleId ? [Number(data.responsibleId)] : [],
+      email: data.email || null, // Envia nulo se for string vazia
+      address: data.address || null, // Envia nulo se for string vazia
+      notes: data.notes || null, // Envia nulo se for string vazia
+      legalGuardianIds: (data.legalGuardianIds ?? []).map(Number),
     }
 
     const updatedPatientDto = (await api(`/patients/${id}`, {
@@ -148,8 +151,6 @@ export class PatientController {
         p.name.toLowerCase().includes(name.toLowerCase())
     )
   }
-
-  // Remova a função mapAppointmentPatientToPatient(patient)
 
   clearCache(): void {
     this.cache = []

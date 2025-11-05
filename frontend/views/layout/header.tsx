@@ -59,12 +59,14 @@ export function Header({ onMenuClick, user }: HeaderProps) {
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
 
+          {/* --- BOTÃO DE SINO REMOVIDO ---
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-4 w-4" />
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
               3
             </span>
           </Button>
+          */}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -22,8 +22,15 @@ import {
   dashboardController,
 } from "@/controllers/dashboard-controller"
 import { Skeleton } from "@/components/ui/skeleton"
+// CORREÇÃO: Importando o tipo 'Page' do layout
+import type { Page } from "../layout/dashboard-layout"
 
-export function Dashboard() {
+// CORREÇÃO: Definindo as props que o componente recebe
+interface DashboardProps {
+  onPageChange?: (page: Page) => void
+}
+
+export function Dashboard({ onPageChange }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -171,7 +178,7 @@ export function Dashboard() {
                             {appointment.time}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(appointment.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                            {new Date(appointment.date + "T12:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                           </div>
                         </div>
                         <div>
@@ -202,9 +209,11 @@ export function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* CORREÇÃO: Botões de Ação Rápida conectados */}
             <Button
               className="w-full justify-start bg-transparent"
               variant="outline"
+              onClick={() => onPageChange?.("patients")}
             >
               <Users className="mr-2 h-4 w-4" />
               Novo Paciente
@@ -212,6 +221,7 @@ export function Dashboard() {
             <Button
               className="w-full justify-start bg-transparent"
               variant="outline"
+              onClick={() => onPageChange?.("appointments")}
             >
               <Calendar className="mr-2 h-4 w-4" />
               Agendar Consulta
@@ -219,6 +229,7 @@ export function Dashboard() {
             <Button
               className="w-full justify-start bg-transparent"
               variant="outline"
+              onClick={() => onPageChange?.("finance")}
             >
               <DollarSign className="mr-2 h-4 w-4" />
               Registrar Pagamento

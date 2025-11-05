@@ -11,3 +11,5 @@ export interface CreatePaymentPayload {
   paymentDate: string
   payerId: string
 }
+
+export type UpdatePaymentPayload = Partial<CreatePaymentPayload>

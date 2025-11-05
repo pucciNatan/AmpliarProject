@@ -1,6 +1,6 @@
 import { api } from "@/lib/api-client"
-import type { CreatePaymentPayload, Payment } from "@/models/payment"
-import type { Payer } from "@/models/payer"
+import type { CreatePaymentPayload, Payment, UpdatePaymentPayload } from "@/models/payment"
+import type { Payer, CreatePayerPayload, UpdatePayerPayload } from "@/models/payer"
 
 interface PaymentDTO {
   id: number
@@ -70,9 +70,48 @@ export class FinanceController {
     return mapPaymentDtoToPayment(response)
   }
 
+  async updatePayment(id: string, payload: UpdatePaymentPayload): Promise<Payment> {
+    const body: Record<string, unknown> = {}
+    if (payload.amount !== undefined) body.valor = payload.amount
+    if (payload.paymentDate !== undefined) body.paymentDate = payload.paymentDate
+    if (payload.payerId !== undefined) body.payerId = Number(payload.payerId)
+
+    const response = (await api(`/payments/${id}`, {
+      method: "PUT",
+      body,
+    })) as PaymentDTO
+
+    return mapPaymentDtoToPayment(response)
+  }
+
+  async deletePayment(id: string): Promise<void> {
+    await api(`/payments/${id}`, { method: "DELETE" })
+  }
+
+
   async getPayers(): Promise<Payer[]> {
     const response = (await api("/payers", { method: "GET" })) as PayerDTO[]
     return response.map(mapPayerDtoToPayer)
+  }
+
+  async createPayer(payload: CreatePayerPayload): Promise<Payer> {
+    const response = (await api("/payers", {
+      method: "POST",
+      body: payload,
+    })) as PayerDTO
+    return mapPayerDtoToPayer(response)
+  }
+
+  async updatePayer(id: string, payload: UpdatePayerPayload): Promise<Payer> {
+    const response = (await api(`/payers/${id}`, {
+      method: "PUT",
+      body: payload,
+    })) as PayerDTO
+    return mapPayerDtoToPayer(response)
+  }
+
+  async deletePayer(id: string): Promise<void> {
+    await api(`/payers/${id}`, { method: "DELETE" })
   }
 }
 
