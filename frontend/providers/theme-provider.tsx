@@ -28,29 +28,36 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<Theme>(() => (localStorage?.getItem(storageKey) as Theme) || defaultTheme)
+  // 1. CORREÇÃO: Inicialize o estado apenas com o defaultTheme (seguro para o servidor)
+  const [theme, setTheme] = React.useState<Theme>(defaultTheme)
+
+  // 2. CORREÇÃO: Este useEffect SÓ roda no cliente (navegador)
+  React.useEffect(() => {
+    // 2a. Verifique o que está salvo no localStorage
+    const storedTheme = (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    setTheme(storedTheme)
+  }, [storageKey, defaultTheme])
+
 
   React.useEffect(() => {
     const root = window.document.documentElement
-
     root.classList.remove("light", "dark")
 
+    let effectiveTheme = theme
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-
-      root.classList.add(systemTheme)
-      return
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
     }
 
-    root.classList.add(theme)
-  }, [theme])
+    root.classList.add(effectiveTheme)
+
+    // 3. CORREÇÃO: Salve no localStorage apenas quando o tema mudar
+    localStorage.setItem(storageKey, theme)
+
+  }, [theme, storageKey])
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage?.setItem(storageKey, theme)
-      setTheme(theme)
-    },
+    setTheme, // A função setTheme já atualiza o estado, disparando o useEffect acima
   }
 
   return (

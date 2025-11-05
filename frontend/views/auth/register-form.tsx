@@ -25,7 +25,7 @@ export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
     confirmPassword: "",
     crp: "",
     phone: "",
-    specialties: [],
+    cpf: "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -36,6 +36,7 @@ export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
 
   const validateForm = () => {
     const newErrors: Partial<RegisterData> = {}
+    const phoneRegex = /^\d{10,11}$/ 
 
     if (!formData.name.trim()) {
       newErrors.name = "Nome é obrigatório"
@@ -50,7 +51,7 @@ export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
     if (!formData.password) {
       newErrors.password = "Senha é obrigatória"
     } else if (formData.password.length < 6) {
-      newErrors.password = "Senha deve ter pelo menos 6 caracteres"
+      newErrors.password = "Senha deve ter no mínimo 6 caracteres"
     }
 
     if (!formData.confirmPassword) {
@@ -65,6 +66,12 @@ export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
 
     if (!formData.phone.trim()) {
       newErrors.phone = "Telefone é obrigatório"
+    } else if (!phoneRegex.test(formData.phone.replace(/\D/g, ''))) {
+      newErrors.phone = "Telefone deve ter 10 ou 11 dígitos (Ex: 11988887777)"
+    }
+
+    if (!formData.cpf.trim()) {
+      newErrors.cpf = "CPF é obrigatório"
     }
 
     setErrors(newErrors)
@@ -153,6 +160,18 @@ export function RegisterForm({ onLogin, onModeChange }: RegisterFormProps) {
                 className={errors.phone ? "border-red-500" : ""}
               />
               {errors.phone && <p className="text-sm text-red-600">{errors.phone}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF</Label>
+              <Input
+                id="cpf"
+                placeholder="000.000.000-00"
+                value={formData.cpf}
+                onChange={(e) => handleInputChange("cpf", e.target.value)}
+                className={errors.cpf ? "border-red-500" : ""}
+              />
+              {errors.cpf && <p className="text-sm text-red-600">{errors.cpf}</p>}
             </div>
 
             <div className="space-y-2">

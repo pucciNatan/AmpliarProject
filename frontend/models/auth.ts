@@ -2,10 +2,6 @@ export interface User {
   id: string
   name: string
   email: string
-  crp: string
-  phone: string
-  role: "psychologist" | "secretary" | "admin"
-  avatar?: string
 }
 
 export interface LoginCredentials {
@@ -20,7 +16,7 @@ export interface RegisterData {
   confirmPassword: string
   crp: string
   phone: string
-  specialties: string[]
+  cpf: string
 }
 
 export interface AuthState {
@@ -28,4 +24,5 @@ export interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  token: string | null 
 }

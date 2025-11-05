@@ -4,12 +4,14 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, Users, Calendar, DollarSign, User, Settings, Brain } from "lucide-react"
 import type { Page } from "./dashboard-layout"
+import type { User as AuthUser } from "@/models/auth" // Renomeado para evitar conflito
 
 interface SidebarProps {
   currentPage: Page
   onPageChange: (page: Page) => void
   isOpen: boolean
   onToggle: () => void
+  user: AuthUser | null
 }
 
 const menuItems = [
@@ -21,7 +23,18 @@ const menuItems = [
   { id: "settings" as Page, label: "Configurações", icon: Settings },
 ]
 
-export function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
+export function Sidebar({ currentPage, onPageChange, isOpen, user }: SidebarProps) {
+
+  const getInitials = () => {
+    if (!user?.name) return "U"
+    return user.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
+  }
+
   return (
     <div
       className={cn(
@@ -29,7 +42,6 @@ export function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
         isOpen ? "w-64" : "w-16",
       )}
     >
-      {/* Logo */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 dark:bg-blue-500">
@@ -44,7 +56,6 @@ export function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
@@ -73,16 +84,21 @@ export function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* User info */}
       {isOpen && (
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">DR</span>
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                {getInitials()}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">Dr. Maria Silva</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Psicóloga CRP 12345</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {user?.name || "..."}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {user?.email || "..."}
+              </p>
             </div>
           </div>
         </div>
