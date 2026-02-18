@@ -3,6 +3,7 @@ package com.example.ampliar.mapper;
 import com.example.ampliar.dto.appointment.AppointmentDTO;
 import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.model.PaymentModel;
+import com.example.ampliar.model.enums.AppointmentStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,7 @@ public class AppointmentDTOMapper implements Function<AppointmentModel, Appointm
         var payment = model.getPayment();
         Long paymentId = payment != null ? payment.getId() : null;
         BigDecimal paymentAmount = payment != null ? payment.getValor() : BigDecimal.ZERO;
-        String paymentStatus = resolvePaymentStatus(model.getAppointmentDate(), model.getAppointmentEndDate(), payment);
+        String paymentStatus = resolvePaymentStatus(model.getStatus(), model.getAppointmentDate(), model.getAppointmentEndDate(), payment);
 
         log.debug("Agendamento ID: {} - {} pacientes, pagamento: {}",
                  model.getId(), patients.size(), paymentId != null ? paymentId : "Nenhum");
@@ -56,7 +57,10 @@ public class AppointmentDTOMapper implements Function<AppointmentModel, Appointm
         );
     }
 
-    private String resolvePaymentStatus(LocalDateTime start, LocalDateTime end, PaymentModel payment) {
+    private String resolvePaymentStatus(AppointmentStatus status, LocalDateTime start, LocalDateTime end, PaymentModel payment) {
+        if (status == AppointmentStatus.CANCELLED) {
+            return "cancelled";
+        }
         if (payment != null) {
             return "paid";
         }

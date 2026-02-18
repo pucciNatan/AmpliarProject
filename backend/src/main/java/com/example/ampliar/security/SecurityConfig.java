@@ -44,7 +44,7 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .cors(Customizer.withDefaults()); // Esta linha usa o 'corsConfigurationSource' abaixo
+            .cors(Customizer.withDefaults());
         return http.build();
     }
 
@@ -55,7 +55,6 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        // Esta é a forma moderna de configurar
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(psychologistDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());

@@ -34,7 +34,7 @@ public class PsychologistDetailsService implements UserDetailsService {
         log.debug("Email normalizado para busca: {}", normalizedEmail);
 
         try {
-            PsychologistModel psychologist = psychologistRepository.findByEmail(normalizedEmail)
+            PsychologistModel psychologist = psychologistRepository.findByEmailAndDeletedAtIsNull(normalizedEmail)
                     .orElseThrow(() -> {
                         log.warn("Psicólogo não encontrado com o email: {}", normalizedEmail);
                         return new UsernameNotFoundException("Psicólogo não encontrado com o email: " + normalizedEmail);
@@ -45,7 +45,7 @@ public class PsychologistDetailsService implements UserDetailsService {
             return User.builder()
                     .username(psychologist.getEmail())
                     .password(psychologist.getPassword())
-                    .roles("USER") // <-- ADICIONE ESTA LINHA
+                    .roles("USER")
                     .build();
 
         } catch (UsernameNotFoundException e) {

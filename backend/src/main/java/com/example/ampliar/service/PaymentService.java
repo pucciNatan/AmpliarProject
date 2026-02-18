@@ -6,6 +6,7 @@ import com.example.ampliar.dto.payment.PaymentUpdateDTO;
 import com.example.ampliar.mapper.PaymentDTOMapper;
 import com.example.ampliar.model.PayerModel;
 import com.example.ampliar.model.PaymentModel;
+import com.example.ampliar.repository.AppointmentRepository;
 import com.example.ampliar.repository.PayerRepository;
 import com.example.ampliar.repository.PaymentRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -22,15 +23,18 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PayerRepository payerRepository;
     private final PaymentDTOMapper paymentDTOMapper;
+    private final AppointmentRepository appointmentRepository;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             PayerRepository payerRepository,
-            PaymentDTOMapper paymentDTOMapper
+            PaymentDTOMapper paymentDTOMapper,
+            AppointmentRepository appointmentRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.payerRepository = payerRepository;
         this.paymentDTOMapper = paymentDTOMapper;
+        this.appointmentRepository = appointmentRepository;
     }
 
     @Transactional
@@ -104,7 +108,13 @@ public class PaymentService {
                 log.warn("Tentativa de excluir pagamento inexistente ID: {}", id);
                 throw new EntityNotFoundException("Pagamento não encontrado");
             }
-            
+
+            appointmentRepository.findByPayment_Id(id).ifPresent(appointment -> {
+                appointment.setPayment(null);
+                appointmentRepository.save(appointment);
+                log.debug("Referência ao pagamento removida do agendamento ID: {}", appointment.getId());
+            });
+
             paymentRepository.deleteById(id);
             log.info("Pagamento excluído com sucesso ID: {}", id);
             
@@ -159,7 +169,7 @@ public class PaymentService {
 
     private PayerModel getPayerOrThrow(Long id) {
         log.debug("Validando existência do pagador ID: {}", id);
-        return payerRepository.findById(id)
+        return payerRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> {
                     log.error("Pagador não encontrado ID: {}", id);
                     return new EntityNotFoundException("Pagador não encontrado");

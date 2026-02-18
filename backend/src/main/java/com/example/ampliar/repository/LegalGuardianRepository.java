@@ -10,6 +10,7 @@ import com.example.ampliar.model.PsychologistModel;
 
 public interface LegalGuardianRepository extends JpaRepository<LegalGuardianModel, Long>{
 
-    List<LegalGuardianModel> findAllByPsychologist(PsychologistModel psychologist);
-    Optional<LegalGuardianModel> findByIdAndPsychologist(Long id, PsychologistModel psychologist);
+    List<LegalGuardianModel> findAllByPsychologistAndDeletedAtIsNull(PsychologistModel psychologist);
+    Optional<LegalGuardianModel> findByIdAndPsychologistAndDeletedAtIsNull(Long id, PsychologistModel psychologist);
+    List<LegalGuardianModel> findByIdInAndPsychologistAndDeletedAtIsNull(List<Long> ids, PsychologistModel psychologist);
 }

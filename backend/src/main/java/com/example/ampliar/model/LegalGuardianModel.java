@@ -1,10 +1,12 @@
 package com.example.ampliar.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -35,6 +37,9 @@ public class LegalGuardianModel extends PersonAbstract {
     @JsonBackReference
     private PsychologistModel psychologist;
 
+    @Column(name = "deleted_at", nullable = true)
+    private LocalDateTime deletedAt;
+
     public LegalGuardianModel(List<PatientModel> patients, String fullName, String cpf, String phoneNumber, PsychologistModel psychologist) {
         super(fullName, cpf, phoneNumber);
         this.patients = (patients != null) ? patients : new ArrayList<>();
@@ -47,5 +52,9 @@ public class LegalGuardianModel extends PersonAbstract {
 
     public void setPsychologist(PsychologistModel psychologist) {
         this.psychologist = psychologist;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

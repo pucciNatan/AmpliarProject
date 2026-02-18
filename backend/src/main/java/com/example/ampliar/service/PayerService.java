@@ -1,5 +1,6 @@
 package com.example.ampliar.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,7 +39,7 @@ public class PayerService {
 
     private PsychologistModel getAuthenticatedPsychologist() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return psychologistRepository.findByEmail(username)
+        return psychologistRepository.findByEmailAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado com email: " + username));
     }
 
@@ -72,7 +73,7 @@ public class PayerService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            PayerModel existing = payerRepository.findByIdAndPsychologist(id, psychologist)
+            PayerModel existing = payerRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .orElseThrow(() -> {
                         log.error("Pagador não encontrado ID: {}", id);
                         return new EntityNotFoundException("Pagador não encontrado");
@@ -97,15 +98,16 @@ public class PayerService {
 
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
-        PayerModel payer = payerRepository.findByIdAndPsychologist(id, psychologist)
+        PayerModel payer = payerRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                 .orElseThrow(() -> {
                     log.warn("Tentativa de excluir pagador inexistente ID: {}", id);
                     return new EntityNotFoundException("Pagador não encontrado");
                 });
 
         try {
-            payerRepository.deleteById(payer.getId());
-            log.info("Pagador excluído com sucesso ID: {} (pagamentos associados também foram excluídos)", id);
+            payer.setDeletedAt(LocalDateTime.now());
+            payerRepository.save(payer);
+            log.info("Pagador excluído com sucesso ID: {}", id);
 
         } catch (Exception e) {
             log.error("Erro ao excluir pagador ID: {}", id, e);
@@ -120,7 +122,7 @@ public class PayerService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            var payers = payerRepository.findAllByPsychologist(psychologist)
+            var payers = payerRepository.findAllByPsychologistAndDeletedAtIsNull(psychologist)
                     .stream()
                     .map(payerDTOMapper)
                     .toList();
@@ -139,7 +141,7 @@ public class PayerService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            var payer = payerRepository.findByIdAndPsychologist(id, psychologist)
+            var payer = payerRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .map(payerDTOMapper)
                     .orElseThrow(() -> {
                         log.warn("Pagador não encontrado ID: {}", id);

@@ -12,8 +12,8 @@ public record PatientDTO(
         LocalDate birthDate,
         String address,
         String notes,
+        LocalDate firstConsultationDate,
         List<Long> legalGuardianIds,
-        String status,
         Integer totalAppointments
 ) {
 }

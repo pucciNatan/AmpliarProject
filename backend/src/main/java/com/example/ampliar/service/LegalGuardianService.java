@@ -1,5 +1,6 @@
 package com.example.ampliar.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +45,7 @@ public class LegalGuardianService {
 
     private PsychologistModel getAuthenticatedPsychologist() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return psychologistRepository.findByEmail(username)
+        return psychologistRepository.findByEmailAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado com email: " + username));
     }
 
@@ -56,12 +57,12 @@ public class LegalGuardianService {
 
         try {
             List<Long> requestedIds = dto.patientIds();
-            List<PatientModel> patients = patientRepository.findAllById(requestedIds);
+            List<PatientModel> patients = patientRepository.findByIdInAndPsychologistAndDeletedAtIsNull(requestedIds, psychologist);
 
             if (patients.size() != requestedIds.size()) {
-                log.warn("Pacientes não encontrados para responsável legal. Esperados: {}, Encontrados: {}",
+                log.warn("Pacientes não encontrados ou excluídos para responsável legal. Esperados: {}, Encontrados: {}",
                          requestedIds.size(), patients.size());
-                throw new IllegalArgumentException("Um ou mais pacientes informados não existem");
+                throw new IllegalArgumentException("Um ou mais pacientes informados não existem ou estão excluídos");
             }
 
             LegalGuardianModel model = new LegalGuardianModel(
@@ -99,7 +100,7 @@ public class LegalGuardianService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            LegalGuardianModel existing = legalGuardianRepository.findByIdAndPsychologist(id, psychologist)
+            LegalGuardianModel existing = legalGuardianRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .orElseThrow(() -> {
                         log.error("Responsável legal não encontrado para atualização ID: {}", id);
                         return new EntityNotFoundException("Responsável legal não encontrado");
@@ -119,12 +120,12 @@ public class LegalGuardianService {
             }
 
             if (dto.patientIds() != null) {
-                List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
+                List<PatientModel> patients = patientRepository.findByIdInAndPsychologistAndDeletedAtIsNull(dto.patientIds(), psychologist);
 
                 if (patients.size() != dto.patientIds().size()) {
-                    log.warn("Pacientes não encontrados na atualização. Esperados: {}, Encontrados: {}",
+                    log.warn("Pacientes não encontrados ou excluídos na atualização. Esperados: {}, Encontrados: {}",
                              dto.patientIds().size(), patients.size());
-                    throw new IllegalArgumentException("Um ou mais pacientes informados não existem");
+                    throw new IllegalArgumentException("Um ou mais pacientes informados não existem ou estão excluídos");
                 }
 
                 existing.getPatients().forEach(p -> p.getLegalGuardians().remove(existing));
@@ -161,13 +162,14 @@ public class LegalGuardianService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            LegalGuardianModel guardian = legalGuardianRepository.findByIdAndPsychologist(id, psychologist)
+            LegalGuardianModel guardian = legalGuardianRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .orElseThrow(() -> {
                         log.warn("Tentativa de excluir responsável legal inexistente ID: {}", id);
                         return new EntityNotFoundException("Responsável legal não encontrado");
                     });
 
-            legalGuardianRepository.deleteById(guardian.getId());
+            guardian.setDeletedAt(LocalDateTime.now());
+            legalGuardianRepository.save(guardian);
             log.info("Responsável legal excluído com sucesso ID: {}", id);
 
         } catch (EntityNotFoundException e) {
@@ -186,7 +188,7 @@ public class LegalGuardianService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            LegalGuardianDTO result = legalGuardianRepository.findByIdAndPsychologist(id, psychologist)
+            LegalGuardianDTO result = legalGuardianRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .map(legalGuardianDTOMapper)
                     .orElseThrow(() -> {
                         log.warn("Responsável legal não encontrado ID: {}", id);
@@ -211,7 +213,7 @@ public class LegalGuardianService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            List<LegalGuardianDTO> result = legalGuardianRepository.findAllByPsychologist(psychologist)
+            List<LegalGuardianDTO> result = legalGuardianRepository.findAllByPsychologistAndDeletedAtIsNull(psychologist)
                     .stream()
                     .map(legalGuardianDTOMapper)
                     .collect(Collectors.toList());

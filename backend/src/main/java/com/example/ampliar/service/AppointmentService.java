@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AppointmentService {
 
+    private static final List<AppointmentStatus> CONFLICT_STATUSES = List.of(AppointmentStatus.SCHEDULED, AppointmentStatus.NO_SHOW);
+
     private final AppointmentRepository appointmentRepository;
     private final PsychologistRepository psychologistRepository;
     private final PatientRepository patientRepository;
@@ -45,21 +47,23 @@ public class AppointmentService {
                         return new EntityNotFoundException("Psicólogo não encontrado");
                     });
 
-            List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
+            List<PatientModel> patients = patientRepository.findByIdInAndPsychologistAndDeletedAtIsNull(dto.patientIds(), psych);
             if (patients.size() != dto.patientIds().size()) {
-                log.error("Pacientes não encontrados. Esperados: {}, Encontrados: {}",
+                log.error("Pacientes não encontrados ou excluídos. Esperados: {}, Encontrados: {}",
                          dto.patientIds().size(), patients.size());
-                throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
+                throw new EntityNotFoundException("Há paciente(s) inexistente(s) ou excluído(s) no payload");
             }
 
-            validatePsychologistAvailability(dto.appointmentDate(), psych.getId());
+            validatePsychologistAvailability(dto.appointmentDate(), psych.getId(), null);
             for (PatientModel p : patients) {
-                validatePatientAvailability(dto.appointmentDate(), p.getId());
+                validatePatientAvailability(dto.appointmentDate(), p.getId(), null);
             }
 
-            // ✅ CORREÇÃO: Pagamento opcional
             PaymentModel payment = null;
             if (dto.paymentId() != null) {
+                if (appointmentRepository.findByPayment_Id(dto.paymentId()).isPresent()) {
+                    throw new IllegalStateException("Este pagamento já está vinculado a outro agendamento");
+                }
                 payment = paymentRepository.findById(dto.paymentId())
                         .orElseThrow(() -> {
                             log.error("Pagamento não encontrado ID: {}", dto.paymentId());
@@ -108,9 +112,9 @@ public class AppointmentService {
                     });
 
             if (dto.appointmentDate() != null) {
-                validatePsychologistAvailability(dto.appointmentDate(), model.getPsychologist().getId());
+                validatePsychologistAvailability(dto.appointmentDate(), model.getPsychologist().getId(), model.getId());
                 for (PatientModel p : model.getPatients()) {
-                    validatePatientAvailability(dto.appointmentDate(), p.getId());
+                    validatePatientAvailability(dto.appointmentDate(), p.getId(), model.getId());
                 }
                 model.setAppointmentDate(dto.appointmentDate());
                 log.debug("Data do agendamento atualizada");
@@ -142,27 +146,30 @@ public class AppointmentService {
                             log.error("Psicólogo não encontrado ID: {}", dto.psychologistId());
                             return new EntityNotFoundException("Psicólogo não encontrado");
                         });
-                validatePsychologistAvailability(model.getAppointmentDate(), psych.getId());
+                validatePsychologistAvailability(model.getAppointmentDate(), psych.getId(), model.getId());
                 model.setPsychologist(psych);
                 log.debug("Psicólogo do agendamento atualizado");
             }
 
             if (dto.patientIds() != null && !dto.patientIds().isEmpty()) {
-                List<PatientModel> patients = patientRepository.findAllById(dto.patientIds());
+                List<PatientModel> patients = patientRepository.findByIdInAndPsychologistAndDeletedAtIsNull(dto.patientIds(), model.getPsychologist());
                 if (patients.size() != dto.patientIds().size()) {
-                    log.error("Pacientes não encontrados na atualização. Esperados: {}, Encontrados: {}",
+                    log.error("Pacientes não encontrados ou excluídos na atualização. Esperados: {}, Encontrados: {}",
                              dto.patientIds().size(), patients.size());
-                    throw new EntityNotFoundException("Há paciente(s) inexistente(s) no payload");
+                    throw new EntityNotFoundException("Há paciente(s) inexistente(s) ou excluído(s) no payload");
                 }
                 for (PatientModel p : patients) {
-                    validatePatientAvailability(model.getAppointmentDate(), p.getId());
+                    validatePatientAvailability(model.getAppointmentDate(), p.getId(), model.getId());
                 }
                 model.setPatients(patients);
                 log.debug("Pacientes do agendamento atualizados");
             }
 
-            // ✅ CORREÇÃO: Pagamento opcional
             if (dto.paymentId() != null) {
+                var existingWithPayment = appointmentRepository.findByPayment_Id(dto.paymentId());
+                if (existingWithPayment.isPresent() && !existingWithPayment.get().getId().equals(id)) {
+                    throw new IllegalStateException("Este pagamento já está vinculado a outro agendamento");
+                }
                 PaymentModel payment = paymentRepository.findById(dto.paymentId())
                         .orElseThrow(() -> {
                             log.error("Pagamento não encontrado ID: {}", dto.paymentId());
@@ -171,7 +178,6 @@ public class AppointmentService {
                 model.setPayment(payment);
                 log.debug("Pagamento do agendamento atualizado");
             } else if (dto.paymentId() == null && model.getPayment() != null) {
-                // Permite remover o pagamento definindo como null
                 model.setPayment(null);
                 log.debug("Pagamento removido do agendamento");
             }
@@ -235,20 +241,22 @@ public class AppointmentService {
         }
     }
 
-    private void validatePsychologistAvailability(LocalDateTime date, Long psychologistId) {
+    private void validatePsychologistAvailability(LocalDateTime date, Long psychologistId, Long excludeAppointmentId) {
         log.debug("Validando disponibilidade do psicólogo ID: {} para data: {}", psychologistId, date);
-        boolean conflict = appointmentRepository
-                .existsByAppointmentDateAndPsychologistId(date, psychologistId);
+        boolean conflict = excludeAppointmentId == null
+                ? appointmentRepository.existsByAppointmentDateAndPsychologistIdAndStatusIn(date, psychologistId, CONFLICT_STATUSES)
+                : appointmentRepository.existsByAppointmentDateAndPsychologistIdAndStatusInAndIdNot(date, psychologistId, CONFLICT_STATUSES, excludeAppointmentId);
         if (conflict) {
             log.warn("Conflito de horário para psicólogo ID: {} na data: {}", psychologistId, date);
             throw new IllegalStateException("O psicólogo já tem um agendamento nesse horário");
         }
     }
 
-    private void validatePatientAvailability(LocalDateTime date, Long patientId) {
+    private void validatePatientAvailability(LocalDateTime date, Long patientId, Long excludeAppointmentId) {
         log.debug("Validando disponibilidade do paciente ID: {} para data: {}", patientId, date);
-        boolean conflict = appointmentRepository
-                .existsByAppointmentDateAndPatients_Id(date, patientId);
+        boolean conflict = excludeAppointmentId == null
+                ? appointmentRepository.existsByAppointmentDateAndPatients_IdAndStatusIn(date, patientId, CONFLICT_STATUSES)
+                : appointmentRepository.existsByAppointmentDateAndPatients_IdAndStatusInAndIdNot(date, patientId, CONFLICT_STATUSES, excludeAppointmentId);
         if (conflict) {
             log.warn("Conflito de horário para paciente ID: {} na data: {}", patientId, date);
             throw new IllegalStateException("O paciente já tem um agendamento nesse horário");

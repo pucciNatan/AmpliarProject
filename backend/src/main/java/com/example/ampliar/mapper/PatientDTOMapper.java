@@ -26,12 +26,10 @@ public class PatientDTOMapper implements Function<PatientModel, PatientDTO> {
                 .map(LegalGuardianModel::getId)
                 .toList();
 
-        // ATUALIZADO: Contar apenas agendamentos do psicólogo dono do paciente
         Integer totalAppointments = appointmentRepository.countByPatientsContainsAndPsychologistId(
             patientModel,
             patientModel.getPsychologist().getId()
         );
-        String status = (totalAppointments > 0) ? "active" : "inactive";
 
         return new PatientDTO(
                 patientModel.getId(),
@@ -42,8 +40,8 @@ public class PatientDTOMapper implements Function<PatientModel, PatientDTO> {
                 patientModel.getBirthDate(),
                 patientModel.getAddress(),
                 patientModel.getNotes(),
+                patientModel.getFirstConsultationDate(),
                 guardianIds,
-                status,
                 totalAppointments
         );
     }

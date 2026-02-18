@@ -1,5 +1,6 @@
 package com.example.ampliar.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +12,12 @@ import com.example.ampliar.dto.patient.PatientCreateDTO;
 import com.example.ampliar.dto.patient.PatientDTO;
 import com.example.ampliar.dto.patient.PatientUpdateDTO;
 import com.example.ampliar.mapper.PatientDTOMapper;
+import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.model.LegalGuardianModel;
 import com.example.ampliar.model.PatientModel;
 import com.example.ampliar.model.PsychologistModel;
+import com.example.ampliar.model.enums.AppointmentStatus;
+import com.example.ampliar.repository.AppointmentRepository;
 import com.example.ampliar.repository.LegalGuardianRepository;
 import com.example.ampliar.repository.PatientRepository;
 import com.example.ampliar.repository.PsychologistRepository;
@@ -29,23 +33,26 @@ public class PatientService {
     private final LegalGuardianRepository legalGuardianRepository;
     private final PatientDTOMapper patientDTOMapper;
     private final PsychologistRepository psychologistRepository;
+    private final AppointmentRepository appointmentRepository;
 
     @Autowired
     public PatientService(
             PatientRepository patientRepository,
             LegalGuardianRepository legalGuardianRepository,
             PatientDTOMapper patientDTOMapper,
-            PsychologistRepository psychologistRepository
+            PsychologistRepository psychologistRepository,
+            AppointmentRepository appointmentRepository
     ) {
         this.patientRepository = patientRepository;
         this.legalGuardianRepository = legalGuardianRepository;
         this.patientDTOMapper = patientDTOMapper;
         this.psychologistRepository = psychologistRepository;
+        this.appointmentRepository = appointmentRepository;
     }
 
     private PsychologistModel getAuthenticatedPsychologist() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return psychologistRepository.findByEmail(username)
+        return psychologistRepository.findByEmailAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new EntityNotFoundException("Psicólogo não encontrado com email: " + username));
     }
 
@@ -58,13 +65,13 @@ public class PatientService {
         try {
             List<LegalGuardianModel> guardians = (dto.legalGuardianIds() == null || dto.legalGuardianIds().isEmpty())
                     ? List.of()
-                    : legalGuardianRepository.findAllById(dto.legalGuardianIds());
+                    : legalGuardianRepository.findByIdInAndPsychologistAndDeletedAtIsNull(dto.legalGuardianIds(), psychologist);
 
             if (dto.legalGuardianIds() != null && !dto.legalGuardianIds().isEmpty() &&
                     guardians.size() != dto.legalGuardianIds().size()) {
-                log.warn("Responsáveis legais não encontrados. Esperados: {}, Encontrados: {}",
+                log.warn("Responsáveis legais não encontrados ou excluídos. Esperados: {}, Encontrados: {}",
                         dto.legalGuardianIds().size(), guardians.size());
-                throw new EntityNotFoundException("Um ou mais responsáveis legais não foram encontrados");
+                throw new EntityNotFoundException("Um ou mais responsáveis legais não foram encontrados ou estão excluídos");
             }
 
             PatientModel patient = new PatientModel(
@@ -76,7 +83,8 @@ public class PatientService {
                     dto.email(),
                     dto.address(),
                     dto.notes(),
-                    psychologist
+                    psychologist,
+                    dto.firstConsultationDate()
             );
 
             PatientModel savedPatient = patientRepository.save(patient);
@@ -108,7 +116,7 @@ public class PatientService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            PatientModel existing = patientRepository.findByIdAndPsychologist(id, psychologist)
+            PatientModel existing = patientRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .orElseThrow(() -> {
                         log.error("Paciente não encontrado para atualização ID: {}", id);
                         return new EntityNotFoundException("Paciente não encontrado");
@@ -143,14 +151,18 @@ public class PatientService {
                 existing.setNotes(dto.notes());
                 log.debug("Notas do paciente atualizadas");
             }
+            if (dto.firstConsultationDate() != null) {
+                existing.setFirstConsultationDate(dto.firstConsultationDate());
+                log.debug("Data da primeira consulta atualizada");
+            }
 
             if (dto.legalGuardianIds() != null) {
-                List<LegalGuardianModel> guardians = legalGuardianRepository.findAllById(dto.legalGuardianIds());
+                List<LegalGuardianModel> guardians = legalGuardianRepository.findByIdInAndPsychologistAndDeletedAtIsNull(dto.legalGuardianIds(), psychologist);
 
                 if (guardians.size() != dto.legalGuardianIds().size()) {
-                    log.warn("Responsáveis legais não encontrados na atualização. Esperados: {}, Encontrados: {}",
+                    log.warn("Responsáveis legais não encontrados ou excluídos na atualização. Esperados: {}, Encontrados: {}",
                             dto.legalGuardianIds().size(), guardians.size());
-                    throw new EntityNotFoundException("Um ou mais responsáveis legais não foram encontrados");
+                    throw new EntityNotFoundException("Um ou mais responsáveis legais não foram encontrados ou estão excluídos");
                 }
 
                 existing.getLegalGuardians().forEach(g -> g.getPatients().remove(existing));
@@ -183,23 +195,28 @@ public class PatientService {
 
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
-        try {
-            PatientModel patient = patientRepository.findByIdAndPsychologist(id, psychologist)
-                    .orElseThrow(() -> {
-                        log.warn("Tentativa de excluir paciente inexistente ID: {}", id);
-                        return new EntityNotFoundException("Paciente não encontrado");
-                    });
+        PatientModel patient = patientRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
+                .orElseThrow(() -> {
+                    log.warn("Tentativa de excluir paciente inexistente ou já excluído ID: {}", id);
+                    return new EntityNotFoundException("Paciente não encontrado");
+                });
 
-            patientRepository.deleteById(patient.getId());
-            log.info("Paciente excluído com sucesso ID: {}", id);
-
-        } catch (EntityNotFoundException e) {
-            log.warn("Paciente não encontrado para exclusão ID: {}", id);
-            throw e;
-        } catch (Exception e) {
-            log.error("Erro ao excluir paciente ID: {}", id, e);
-            throw new RuntimeException("Erro interno ao excluir paciente", e);
+        List<AppointmentModel> scheduled = appointmentRepository
+                .findByPatientsContainingAndStatus(patient, AppointmentStatus.SCHEDULED);
+        for (AppointmentModel appointment : scheduled) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointmentRepository.save(appointment);
         }
+        List<AppointmentModel> noShow = appointmentRepository
+                .findByPatientsContainingAndStatus(patient, AppointmentStatus.NO_SHOW);
+        for (AppointmentModel appointment : noShow) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointmentRepository.save(appointment);
+        }
+
+        patient.setDeletedAt(LocalDateTime.now());
+        patientRepository.save(patient);
+        log.info("Paciente excluído com sucesso ID: {}", id);
     }
 
     @Transactional(readOnly = true)
@@ -209,7 +226,7 @@ public class PatientService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            PatientModel patient = patientRepository.findByIdAndPsychologist(id, psychologist)
+            PatientModel patient = patientRepository.findByIdAndPsychologistAndDeletedAtIsNull(id, psychologist)
                     .orElseThrow(() -> {
                         log.warn("Paciente não encontrado ID: {}", id);
                         return new EntityNotFoundException("Paciente não encontrado");
@@ -235,7 +252,7 @@ public class PatientService {
         PsychologistModel psychologist = getAuthenticatedPsychologist();
 
         try {
-            List<PatientDTO> result = patientRepository.findAllByPsychologist(psychologist)
+            List<PatientDTO> result = patientRepository.findAllByPsychologistAndDeletedAtIsNull(psychologist)
                     .stream()
                     .map(patientDTOMapper)
                     .toList();

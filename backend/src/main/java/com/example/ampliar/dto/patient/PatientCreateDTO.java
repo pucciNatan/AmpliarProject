@@ -33,12 +33,13 @@ public record PatientCreateDTO(
         @BirthDate
         LocalDate birthDate,
 
-        // Adicione estes 3 campos
         @Email(message = "Email inválido")
         String email,
 
         String address,
         String notes,
+
+        LocalDate firstConsultationDate,
 
         List<Long> legalGuardianIds
 ) {

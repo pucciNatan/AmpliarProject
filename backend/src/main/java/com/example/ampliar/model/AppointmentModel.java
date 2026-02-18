@@ -37,7 +37,6 @@ public class AppointmentModel {
     )
     private List<PatientModel> patients = new ArrayList<>();
 
-    // ✅ CORREÇÃO: Pagamento opcional
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "payment_id", nullable = true, unique = false)
     private PaymentModel payment;
@@ -87,7 +86,6 @@ public class AppointmentModel {
     }
 
     public void setPayment(PaymentModel payment) {
-        // ✅ CORREÇÃO: Pagamento pode ser nulo
         this.payment = payment;
         if (payment != null) {
             log.debug("Pagamento definido para agendamento: {}", payment.getId());

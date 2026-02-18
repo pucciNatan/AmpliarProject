@@ -29,7 +29,6 @@ public class PaymentModel {
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
 
-    // ✅ CORREÇÃO: Cascade delete adicionado
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "payer_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)

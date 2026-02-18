@@ -53,10 +53,9 @@ public abstract class PersonAbstract {
         if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
             throw new IllegalArgumentException("O número de telefone é obrigatório");
         }
-        String digits = phoneNumber.replaceAll("\\D", ""); // remove tudo que não é dígito
-        if (!digits.matches("\\d{10,11}")) {
-            throw new IllegalArgumentException("Telefone inválido: use 10 ou 11 dígitos.");
+        if (!phoneNumber.trim().matches("^\\d{10,11}$")) {
+            throw new IllegalArgumentException("O número de telefone deve conter apenas 10 ou 11 dígitos, sem formatação.");
         }
-        this.phoneNumber = digits; // persiste só dígitos
+        this.phoneNumber = phoneNumber.trim();
     }
 }

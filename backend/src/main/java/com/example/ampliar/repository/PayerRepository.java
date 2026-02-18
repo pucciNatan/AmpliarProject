@@ -10,6 +10,7 @@ import com.example.ampliar.model.PsychologistModel;
 
 public interface PayerRepository  extends JpaRepository<PayerModel, Long> {
 
-    List<PayerModel> findAllByPsychologist(PsychologistModel psychologist);
-    Optional<PayerModel> findByIdAndPsychologist(Long id, PsychologistModel psychologist);
+    List<PayerModel> findAllByPsychologistAndDeletedAtIsNull(PsychologistModel psychologist);
+    Optional<PayerModel> findByIdAndPsychologistAndDeletedAtIsNull(Long id, PsychologistModel psychologist);
+    Optional<PayerModel> findByIdAndDeletedAtIsNull(Long id);
 }

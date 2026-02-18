@@ -24,67 +24,42 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<PaymentDTO> createPayment(@Valid @RequestBody PaymentCreateDTO payment) {
-        log.info("Recebida requisição POST /payments - Criar pagamento - Valor: {}, Pagador: {}", 
+        log.info("Recebida requisição POST /payments - Criar pagamento - Valor: {}, Pagador: {}",
                  payment.valor(), payment.payerId());
-        try {
-            PaymentDTO result = paymentService.createPayment(payment);
-            log.info("Pagamento criado com sucesso - ID: {}, Valor: {}", result.id(), result.valor());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("Erro ao criar pagamento: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().build();
-        }
+        PaymentDTO result = paymentService.createPayment(payment);
+        log.info("Pagamento criado com sucesso - ID: {}, Valor: {}", result.id(), result.valor());
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PaymentDTO> updatePayment(@PathVariable Long id, @Valid @RequestBody PaymentUpdateDTO updatedPayment) {
         log.info("Recebida requisição PUT /payments/{} - Atualizar pagamento", id);
-        try {
-            PaymentDTO result = paymentService.updatePayment(id, updatedPayment);
-            log.info("Pagamento atualizado com sucesso - ID: {}", id);
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("Erro ao atualizar pagamento ID {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.badRequest().build();
-        }
+        PaymentDTO result = paymentService.updatePayment(id, updatedPayment);
+        log.info("Pagamento atualizado com sucesso - ID: {}", id);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
         log.info("Recebida requisição DELETE /payments/{} - Excluir pagamento", id);
-        try {
-            paymentService.deletePayment(id);
-            log.info("Pagamento excluído com sucesso - ID: {}", id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            log.error("Erro ao excluir pagamento ID {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.notFound().build();
-        }
+        paymentService.deletePayment(id);
+        log.info("Pagamento excluído com sucesso - ID: {}", id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PaymentDTO> getPaymentById(@PathVariable Long id) {
-        log.debug("🔍 Recebida requisição GET /payments/{} - Buscar pagamento por ID", id);
-        try {
-            PaymentDTO result = paymentService.getPaymentById(id);
-            log.debug("Pagamento encontrado - ID: {}, Valor: {}", id, result.valor());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.warn("Pagamento não encontrado - ID: {} - {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        log.debug("Recebida requisição GET /payments/{} - Buscar pagamento por ID", id);
+        PaymentDTO result = paymentService.getPaymentById(id);
+        log.debug("Pagamento encontrado - ID: {}, Valor: {}", id, result.valor());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping
     public ResponseEntity<List<PaymentDTO>> getAllPayments() {
         log.debug("Recebida requisição GET /payments - Listar todos os pagamentos");
-        try {
-            List<PaymentDTO> result = paymentService.getAllPayments();
-            log.debug("Lista de pagamentos retornada - Total: {}", result.size());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("Erro ao listar pagamentos: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }
+        List<PaymentDTO> result = paymentService.getAllPayments();
+        log.debug("Lista de pagamentos retornada - Total: {}", result.size());
+        return ResponseEntity.ok(result);
     }
 }

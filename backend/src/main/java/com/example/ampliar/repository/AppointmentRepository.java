@@ -9,20 +9,27 @@ import org.springframework.stereotype.Repository;
 
 import com.example.ampliar.model.AppointmentModel;
 import com.example.ampliar.model.PatientModel;
+import com.example.ampliar.model.enums.AppointmentStatus;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<AppointmentModel, Long> {
 
-    boolean existsByAppointmentDateAndPsychologistId(LocalDateTime date, Long psychologistId);
+    List<AppointmentModel> findByPatientsContainingAndStatus(PatientModel patient, AppointmentStatus status);
 
-    boolean existsByAppointmentDateAndPatients_Id(LocalDateTime date, Long patientId);
+    boolean existsByAppointmentDateAndPsychologistIdAndStatusIn(LocalDateTime appointmentDate, Long psychologistId, List<AppointmentStatus> status);
+
+    boolean existsByAppointmentDateAndPatients_IdAndStatusIn(LocalDateTime appointmentDate, Long patientId, List<AppointmentStatus> status);
+
+    boolean existsByAppointmentDateAndPsychologistIdAndStatusInAndIdNot(LocalDateTime appointmentDate, Long psychologistId, List<AppointmentStatus> status, Long id);
+
+    boolean existsByAppointmentDateAndPatients_IdAndStatusInAndIdNot(LocalDateTime appointmentDate, Long patientId, List<AppointmentStatus> status, Long id);
 
     Integer countByPatientsContains(PatientModel patient);
 
-    // MÉTODO ADICIONADO
     Integer countByPatientsContainsAndPsychologistId(PatientModel patient, Long psychologistId);
 
-    // MÉTODOS ADICIONADOS (para a próxima etapa)
     List<AppointmentModel> findByPsychologistId(Long psychologistId);
     Optional<AppointmentModel> findByIdAndPsychologistId(Long id, Long psychologistId);
+
+    Optional<AppointmentModel> findByPayment_Id(Long paymentId);
 }

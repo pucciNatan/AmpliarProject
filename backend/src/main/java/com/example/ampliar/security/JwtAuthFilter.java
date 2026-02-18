@@ -22,7 +22,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
-    // ✅ CORREÇÃO: Adicionar JwtUtil na injeção
     public JwtAuthFilter(UserDetailsService userDetailsService, JwtUtil jwtUtil) {
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
@@ -37,14 +36,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         
         log.debug("Processando requisição: {} {} - Filter: JwtAuthFilter", method, path);
 
-        // 1) Não interceptar rotas públicas
         if (path.startsWith("/auth/")) {
             log.debug("Rota pública detectada: {} - Pulando filtro JWT", path);
             chain.doFilter(request, response);
             return;
         }
 
-        // 2) Ler header
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.debug("Requisição sem token Bearer - {} {}", method, path);
@@ -56,7 +53,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         log.debug("Token JWT encontrado - Tamanho: {} caracteres", token.length());
 
         try {
-            // ✅ CORREÇÃO: Usar jwtUtil injetado em vez de método estático
             String username = jwtUtil.extractEmail(token);
             log.debug("Email extraído do token: {}", username);
 
@@ -64,7 +60,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 log.debug("Carregando UserDetails para: {}", username);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 
-                // ✅ CORREÇÃO: Usar jwtUtil injetado
                 if (jwtUtil.validateToken(token)) {
                     var auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
@@ -82,10 +77,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             log.error("Erro durante processamento do token JWT - {} {}: {}", 
                      method, path, e.getMessage());
-            // Não interrompe a cadeia - continua para próximo filtro
         }
 
-        // 3) SEMPRE continuar a cadeia
         chain.doFilter(request, response);
         log.debug("Filtro JWT concluído para: {} {}", method, path);
     }

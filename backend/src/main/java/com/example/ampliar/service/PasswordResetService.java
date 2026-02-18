@@ -36,10 +36,9 @@ public class PasswordResetService {
     @Transactional
     public String createPasswordResetToken(String email) {
         log.info("Gerando token de redefinição de senha para: {}", email);
-        PsychologistModel psychologist = psychologistRepository.findByEmail(email)
+        PsychologistModel psychologist = psychologistRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
-        // opcional: limpar tokens expirados
         tokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
 
         String token = UUID.randomUUID().toString();

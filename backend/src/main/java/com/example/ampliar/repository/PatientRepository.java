@@ -1,20 +1,18 @@
 package com.example.ampliar.repository;
 
 import java.util.List;
-import java.util.Optional; // IMPORTAR
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.ampliar.model.PatientModel; // IMPORTAR
-import com.example.ampliar.model.PsychologistModel; // IMPORTAR
+import com.example.ampliar.model.PatientModel;
+import com.example.ampliar.model.PsychologistModel;
 
-// ****** INÍCIO DA MODIFICAÇÃO ******
+public interface PatientRepository extends JpaRepository<PatientModel, Long> {
 
-public interface PatientRepository extends JpaRepository<PatientModel, Long>{
+    List<PatientModel> findAllByPsychologistAndDeletedAtIsNull(PsychologistModel psychologist);
 
-    // MÉTODOS ADICIONADOS
-    List<PatientModel> findAllByPsychologist(PsychologistModel psychologist);
-    Optional<PatientModel> findByIdAndPsychologist(Long id, PsychologistModel psychologist);
+    Optional<PatientModel> findByIdAndPsychologistAndDeletedAtIsNull(Long id, PsychologistModel psychologist);
+
+    List<PatientModel> findByIdInAndPsychologistAndDeletedAtIsNull(List<Long> ids, PsychologistModel psychologist);
 }
-
-// ****** FIM DA MODIFICAÇÃO ******

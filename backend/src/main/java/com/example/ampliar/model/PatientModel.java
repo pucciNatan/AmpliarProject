@@ -1,12 +1,12 @@
 package com.example.ampliar.model;
 
-// A importação de AppointmentStatus foi removida daqui
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.example.ampliar.validation.constraints.BirthDate;
-import com.fasterxml.jackson.annotation.JsonBackReference; // IMPORTAR
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
@@ -19,7 +19,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne; // IMPORTAR
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import lombok.Getter;
@@ -51,6 +51,11 @@ public class PatientModel extends PersonAbstract {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "dta_primeira_consulta")
+    private LocalDate firstConsultationDate;
+
+    @Column(name = "deleted_at", nullable = true)
+    private LocalDateTime deletedAt;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinTable(
@@ -64,29 +69,23 @@ public class PatientModel extends PersonAbstract {
     @ManyToMany(mappedBy = "patients", fetch = FetchType.LAZY)
     private List<AppointmentModel> appointments = new ArrayList<>();
 
-    // ****** INÍCIO DA MODIFICAÇÃO ******
-
-    // CAMPO ADICIONADO
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "psychologist_id", nullable = false)
     @JsonBackReference
     private PsychologistModel psychologist;
 
-    // CONSTRUTOR ATUALIZADO
-    public PatientModel(LocalDate birthDate, List<LegalGuardianModel> legalGuardians, String fullName, String cpf, String phoneNumber, String email, String address, String notes, PsychologistModel psychologist) {
+    public PatientModel(LocalDate birthDate, List<LegalGuardianModel> legalGuardians, String fullName, String cpf, String phoneNumber, String email, String address, String notes, PsychologistModel psychologist, LocalDate firstConsultationDate) {
         super(fullName, cpf, phoneNumber);
         this.birthDate = birthDate;
         this.legalGuardians = legalGuardians;
         this.email = email;
         this.address = address;
         this.notes = notes;
-        this.psychologist = psychologist; // LINHA ADICIONADA
+        this.psychologist = psychologist;
+        this.firstConsultationDate = firstConsultationDate;
     }
 
-    // MÉTODO ADICIONADO
     public void setPsychologist(PsychologistModel psychologist) {
         this.psychologist = psychologist;
     }
-
-    // ****** FIM DA MODIFICAÇÃO ******
 }

@@ -21,7 +21,6 @@ public class PsychologistController {
         this.psychologistService = psychologistService;
     }
 
-    // ✅ CORREÇÃO: Adicionado endpoint CREATE
     @PostMapping
     public PsychologistDTO createPsychologist(@Valid @RequestBody PsychologistCreateDTO dto) {
         log.info("Criando psicólogo: {}", dto.email());
